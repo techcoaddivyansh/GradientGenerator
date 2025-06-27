@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gradient Image Generator</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+            background: #f0f0f0;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .gradient-preview {
+            width: 100%;
+            height: 300px;
+            background: linear-gradient(to right, rgba(4, 3, 73, 1) 28%, rgba(4, 3, 73, 0.6) 65%, rgba(0, 0, 0, 0.4));
+            border: 2px solid #ccc;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        .controls {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        label {
+            font-weight: bold;
+            color: #333;
+        }
+        input, select {
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .download-section {
+            margin-top: 20px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 5px;
+        }
+        .size-options {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin: 10px 0;
+        }
+        .size-btn {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .size-btn:hover {
+            background: #1e7e34;
+        }
+        #downloadCanvas {
+            display: none;
+        }
+        .gradient-info {
+            background: #e9ecef;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .color-stops {
+            display: flex;
+            gap: 15px;
+            margin: 10px 0;
+            flex-wrap: wrap;
+        }
+        .color-stop {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+        }
+        .color-preview {
+            width: 50px;
+            height: 30px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Roku Gradient Image Generator</h1>
+        <p>Generate your custom gradient image for Roku BrightScript applications</p>
+        
+        <div class="gradient-info">
+            <h3>Current Gradient</h3>
+            <code>linear-gradient(to right, rgba(4, 3, 73, 1) 28%, rgba(4, 3, 73, 0.6) 65%, rgba(0, 0, 0, 0.4))</code>
+            
+            <div class="color-stops">
+                <div class="color-stop">
+                    <div class="color-preview" style="background: rgba(4, 3, 73, 1);"></div>
+                    <small>28% - rgba(4, 3, 73, 1)</small>
+                </div>
+                <div class="color-stop">
+                    <div class="color-preview" style="background: rgba(4, 3, 73, 0.6);"></div>
+                    <small>65% - rgba(4, 3, 73, 0.6)</small>
+                </div>
+                <div class="color-stop">
+                    <div class="color-preview" style="background: rgba(0, 0, 0, 0.4);"></div>
+                    <small>100% - rgba(0, 0, 0, 0.4)</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="gradient-preview" id="gradientPreview"></div>
+
+        <div class="download-section">
+            <h3>Download Gradient Image</h3>
+            <p>Choose your preferred size for Roku application:</p>
+            
+            <div class="size-options">
+                <button class="size-btn" onclick="downloadGradient(1920, 1080)">1920×1080 (Full HD)</button>
+                <button class="size-btn" onclick="downloadGradient(1280, 720)">1280×720 (HD)</button>
+                <button class="size-btn" onclick="downloadGradient(800, 450)">800×450 (Small)</button>
+                <button class="size-btn" onclick="downloadGradient(400, 225)">400×225 (Thumbnail)</button>
+            </div>
+            
+            <div class="controls">
+                <div class="control-group">
+                    <label for="customWidth">Custom Width:</label>
+                    <input type="number" id="customWidth" value="1920" min="1" max="4000">
+                </div>
+                <div class="control-group">
+                    <label for="customHeight">Custom Height:</label>
+                    <input type="number" id="customHeight" value="1080" min="1" max="4000">
+                </div>
+                <button onclick="downloadCustomSize()">Download Custom Size</button>
+            </div>
+        </div>
+
+        <canvas id="downloadCanvas"></canvas>
+
+        <div class="gradient-info">
+            <h3>Usage in Roku BrightScript</h3>
+            <p>After downloading, add the image to your <code>pkg:/images/</code> directory and use:</p>
+            <pre><code>backgroundImage = CreateObject("roSGNode", "Poster")
+backgroundImage.uri = "pkg:/images/gradient_background.png"
+backgroundImage.width = 1920
+backgroundImage.height = 1080
+m.top.appendChild(backgroundImage)</code></pre>
+        </div>
+    </div>
+
+    <script>
+        function createGradientCanvas(width, height) {
+            const canvas = document.getElementById('downloadCanvas');
+            const ctx = canvas.getContext('2d');
+            
+            canvas.width = width;
+            canvas.height = height;
+            
+            // Create linear gradient
+            const gradient = ctx.createLinearGradient(0, 0, width, 0);
+            
+            // Add color stops based on the CSS gradient
+            gradient.addColorStop(0, 'rgba(4, 3, 73, 1)');      // 0%
+            gradient.addColorStop(0.28, 'rgba(4, 3, 73, 1)');   // 28%
+            gradient.addColorStop(0.65, 'rgba(4, 3, 73, 0.6)'); // 65%
+            gradient.addColorStop(1, 'rgba(0, 0, 0, 0.4)');     // 100%
+            
+            // Fill the canvas with gradient
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, width, height);
+            
+            return canvas;
+        }
+        
+        function downloadGradient(width, height) {
+            const canvas = createGradientCanvas(width, height);
+            
+            // Convert to blob and download
+            canvas.toBlob(function(blob) {
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `gradient_${width}x${height}.png`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }, 'image/png');
+        }
+        
+        function downloadCustomSize() {
+            const width = parseInt(document.getElementById('customWidth').value);
+            const height = parseInt(document.getElementById('customHeight').value);
+            
+            if (width > 0 && height > 0) {
+                downloadGradient(width, height);
+            } else {
+                alert('Please enter valid width and height values.');
+            }
+        }
+
+        // Initialize preview
+        document.addEventListener('DOMContentLoaded', function() {
+            // The CSS gradient is already applied to the preview div
+            console.log('Gradient preview loaded');
+        });
+    </script>
+</body>
+</html>
