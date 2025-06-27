@@ -26,6 +26,7 @@
             border: 2px solid #ccc;
             margin: 20px 0;
             border-radius: 5px;
+            transition: all 0.3s ease;
         }
         .controls {
             display: flex;
@@ -47,6 +48,12 @@
             padding: 8px;
             border: 1px solid #ccc;
             border-radius: 4px;
+            transition: border-color 0.3s ease;
+        }
+        input:focus, select:focus {
+            border-color: #007bff;
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
         }
         button {
             background: #007bff;
@@ -57,9 +64,13 @@
             cursor: pointer;
             font-size: 16px;
             font-weight: bold;
+            transition: background 0.3s ease, transform 0.1s ease;
         }
         button:hover {
             background: #0056b3;
+        }
+        button:active {
+            transform: scale(0.98);
         }
         .download-section {
             margin-top: 20px;
@@ -105,6 +116,15 @@
             flex-direction: column;
             align-items: center;
             gap: 5px;
+            border: 1px solid #ddd;
+            padding: 10px;
+            border-radius: 5px;
+            background: white;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            transition: box-shadow 0.3s ease, transform 0.3s ease;
+        }
+        .color-stop:hover {
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
         }
         .color-preview {
             width: 50px;
@@ -112,63 +132,255 @@
             border-radius: 4px;
             border: 1px solid #ccc;
         }
+        .color-input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-top: 5px;
+        }
+        .color-input-row {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .color-input-row label {
+            min-width: 70px;
+            font-size: 14px;
+        }
+        .color-input-row input[type="number"] {
+            width: 60px;
+        }
+        .color-input-row input[type="range"] {
+            width: 100px;
+        }
+        .add-stop-btn {
+            background: #6c757d;
+            margin-top: 10px;
+        }
+        .remove-stop-btn {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            margin-top: 5px;
+        }
+        .remove-stop-btn:hover {
+            background: #c82333;
+        }
+        .direction-control {
+            margin: 15px 0;
+        }
+        .tooltip {
+            position: relative;
+            display: inline-block;
+            cursor: help;
+            margin-left: 5px;
+        }
+        .tooltip .tooltiptext {
+            visibility: hidden;
+            width: 200px;
+            background-color: #333;
+            color: #fff;
+            text-align: center;
+            border-radius: 6px;
+            padding: 8px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            margin-left: -100px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-weight: normal;
+            font-size: 12px;
+            line-height: 1.4;
+        }
+        .tooltip:hover .tooltiptext {
+            visibility: visible;
+            opacity: 1;
+        }
+        .section-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .feedback-message {
+            display: none;
+            padding: 10px 15px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-size: 14px;
+            animation: fadeIn 0.5s;
+        }
+        .success-message {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .info-message {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @keyframes fadeOut {
+            from { opacity: 1; }
+            to { opacity: 0; }
+        }
+        .fadeOut {
+            animation: fadeOut 0.5s forwards;
+        }
+        .step-indicator {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        .step {
+            flex: 1;
+            text-align: center;
+            padding: 10px;
+            background: #e9ecef;
+            border-radius: 4px;
+            margin: 0 5px;
+            font-weight: bold;
+            color: #495057;
+        }
+        .step.active {
+            background: #007bff;
+            color: white;
+        }
+        .step-content {
+            margin-bottom: 30px;
+        }
+        .help-icon {
+            color: #007bff;
+            font-size: 16px;
+            cursor: help;
+            margin-left: 5px;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>Roku Gradient Image Generator</h1>
-        <p>Generate your custom gradient image for Roku BrightScript applications</p>
+        <p>Create custom gradient images for your Roku BrightScript applications with this easy-to-use tool</p>
         
-        <div class="gradient-info">
-            <h3>Current Gradient</h3>
-            <code>linear-gradient(to right, rgba(4, 3, 73, 1) 28%, rgba(4, 3, 73, 0.6) 65%, rgba(0, 0, 0, 0.4))</code>
-            
-            <div class="color-stops">
-                <div class="color-stop">
-                    <div class="color-preview" style="background: rgba(4, 3, 73, 1);"></div>
-                    <small>28% - rgba(4, 3, 73, 1)</small>
-                </div>
-                <div class="color-stop">
-                    <div class="color-preview" style="background: rgba(4, 3, 73, 0.6);"></div>
-                    <small>65% - rgba(4, 3, 73, 0.6)</small>
-                </div>
-                <div class="color-stop">
-                    <div class="color-preview" style="background: rgba(0, 0, 0, 0.4);"></div>
-                    <small>100% - rgba(0, 0, 0, 0.4)</small>
-                </div>
-            </div>
+        <div id="feedback" class="feedback-message"></div>
+        
+        <div class="step-indicator">
+            <div class="step active">1. Design Gradient</div>
+            <div class="step">2. Preview Result</div>
+            <div class="step">3. Download Image</div>
         </div>
-
-        <div class="gradient-preview" id="gradientPreview"></div>
-
-        <div class="download-section">
-            <h3>Download Gradient Image</h3>
-            <p>Choose your preferred size for Roku application:</p>
-            
-            <div class="size-options">
-                <button class="size-btn" onclick="downloadGradient(1920, 1080)">1920×1080 (Full HD)</button>
-                <button class="size-btn" onclick="downloadGradient(1280, 720)">1280×720 (HD)</button>
-                <button class="size-btn" onclick="downloadGradient(800, 450)">800×450 (Small)</button>
-                <button class="size-btn" onclick="downloadGradient(400, 225)">400×225 (Thumbnail)</button>
+        
+        <div class="step-content">
+            <div class="section-header">
+                <h3>Gradient Direction</h3>
+                <div class="tooltip">
+                    <span class="help-icon">?</span>
+                    <span class="tooltiptext">Choose which way your gradient will flow. This determines the start and end points of your gradient.</span>
+                </div>
             </div>
             
             <div class="controls">
-                <div class="control-group">
-                    <label for="customWidth">Custom Width:</label>
-                    <input type="number" id="customWidth" value="1920" min="1" max="4000">
+                <div class="control-group direction-control">
+                    <label for="gradientDirection">Select Direction:</label>
+                    <select id="gradientDirection" onchange="updateGradient()">
+                        <option value="to right">Left to Right</option>
+                        <option value="to left">Right to Left</option>
+                        <option value="to bottom">Top to Bottom</option>
+                        <option value="to top">Bottom to Top</option>
+                        <option value="to bottom right">Top Left to Bottom Right</option>
+                        <option value="to bottom left">Top Right to Bottom Left</option>
+                        <option value="to top right">Bottom Left to Top Right</option>
+                        <option value="to top left">Bottom Right to Top Left</option>
+                    </select>
                 </div>
-                <div class="control-group">
-                    <label for="customHeight">Custom Height:</label>
-                    <input type="number" id="customHeight" value="1080" min="1" max="4000">
+            </div>
+            
+            <div class="section-header">
+                <h3>Color Stops</h3>
+                <div class="tooltip">
+                    <span class="help-icon">?</span>
+                    <span class="tooltiptext">Color stops define the colors in your gradient and where they transition. Add multiple stops for more complex gradients.</span>
                 </div>
-                <button onclick="downloadCustomSize()">Download Custom Size</button>
+            </div>
+            
+            <div id="colorStopsContainer" class="color-stops">
+                <!-- Color stops will be dynamically generated here -->
+            </div>
+            
+            <button id="addStopBtn" class="add-stop-btn" onclick="addColorStop()">+ Add Color Stop</button>
+        </div>
+        
+        <div class="step-content">
+            <div class="section-header">
+                <h3>Gradient Preview</h3>
+                <div class="tooltip">
+                    <span class="help-icon">?</span>
+                    <span class="tooltiptext">This is how your gradient will look. Any changes you make will be shown here in real-time.</span>
+                </div>
+            </div>
+            
+            <div class="gradient-info">
+                <h4>CSS Code:</h4>
+                <code id="gradientCode">linear-gradient(to right, rgba(4, 3, 73, 1) 28%, rgba(4, 3, 73, 0.6) 65%, rgba(0, 0, 0, 0.4))</code>
+            </div>
+
+            <div class="gradient-preview" id="gradientPreview"></div>
+        </div>
+        
+        <div class="step-content">
+            <div class="section-header">
+                <h3>Download Options</h3>
+                <div class="tooltip">
+                    <span class="help-icon">?</span>
+                    <span class="tooltiptext">Choose a size for your gradient image or enter custom dimensions.</span>
+                </div>
+            </div>
+            
+            <div class="download-section">
+                <h4>Common Roku Sizes:</h4>
+                <p>Choose your preferred size for Roku application:</p>
+                
+                <div class="size-options">
+                    <button class="size-btn" onclick="downloadGradient(1920, 1080)">1920×1080 (Full HD)</button>
+                    <button class="size-btn" onclick="downloadGradient(1280, 720)">1280×720 (HD)</button>
+                    <button class="size-btn" onclick="downloadGradient(800, 450)">800×450 (Small)</button>
+                    <button class="size-btn" onclick="downloadGradient(400, 225)">400×225 (Thumbnail)</button>
+                </div>
+                
+                <h4>Custom Size:</h4>
+                <div class="controls">
+                    <div class="control-group">
+                        <label for="customWidth">Width (px):</label>
+                        <input type="number" id="customWidth" value="1920" min="1" max="4000">
+                    </div>
+                    <div class="control-group">
+                        <label for="customHeight">Height (px):</label>
+                        <input type="number" id="customHeight" value="1080" min="1" max="4000">
+                    </div>
+                    <button onclick="downloadCustomSize()">Download Custom Size</button>
+                </div>
             </div>
         </div>
 
         <canvas id="downloadCanvas"></canvas>
 
         <div class="gradient-info">
-            <h3>Usage in Roku BrightScript</h3>
+            <div class="section-header">
+                <h3>Usage in Roku BrightScript</h3>
+                <div class="tooltip">
+                    <span class="help-icon">?</span>
+                    <span class="tooltiptext">Copy this code to use your gradient image in a Roku application.</span>
+                </div>
+            </div>
             <p>After downloading, add the image to your <code>pkg:/images/</code> directory and use:</p>
             <pre><code>backgroundImage = CreateObject("roSGNode", "Poster")
 backgroundImage.uri = "pkg:/images/gradient_background.png"
@@ -179,6 +391,229 @@ m.top.appendChild(backgroundImage)</code></pre>
     </div>
 
     <script>
+        // Default gradient stops
+        const gradientStops = [
+            { color: { r: 4, g: 3, b: 73, a: 1 }, position: 28 },
+            { color: { r: 4, g: 3, b: 73, a: 0.6 }, position: 65 },
+            { color: { r: 0, g: 0, b: 0, a: 0.4 }, position: 100 }
+        ];
+        
+        // Initialize the UI
+        document.addEventListener('DOMContentLoaded', function() {
+            renderColorStops();
+            updateGradient();
+            showFeedback("Welcome! Start by adjusting the colors and positions to create your gradient.", "info");
+            
+            // Update step indicators when scrolling
+            window.addEventListener('scroll', updateStepIndicators);
+        });
+        
+        // Update which step is active based on scroll position
+        function updateStepIndicators() {
+            const stepContents = document.querySelectorAll('.step-content');
+            const steps = document.querySelectorAll('.step');
+            
+            let activeIndex = 0;
+            const scrollPosition = window.scrollY + 100;
+            
+            stepContents.forEach((content, index) => {
+                if (scrollPosition >= content.offsetTop) {
+                    activeIndex = index;
+                }
+            });
+            
+            steps.forEach((step, index) => {
+                if (index === activeIndex) {
+                    step.classList.add('active');
+                } else {
+                    step.classList.remove('active');
+                }
+            });
+        }
+        
+        // Show feedback message
+        function showFeedback(message, type = "success") {
+            const feedback = document.getElementById('feedback');
+            feedback.textContent = message;
+            feedback.className = `feedback-message ${type}-message`;
+            feedback.style.display = 'block';
+            
+            // Auto-hide after 5 seconds
+            setTimeout(() => {
+                feedback.classList.add('fadeOut');
+                setTimeout(() => {
+                    feedback.style.display = 'none';
+                    feedback.classList.remove('fadeOut');
+                }, 500);
+            }, 5000);
+        }
+        
+        // Convert RGB to Hex
+        function rgbToHex(r, g, b) {
+            return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
+        }
+        
+        // Convert Hex to RGB
+        function hexToRgb(hex) {
+            const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+            return result ? {
+                r: parseInt(result[1], 16),
+                g: parseInt(result[2], 16),
+                b: parseInt(result[3], 16)
+            } : null;
+        }
+        
+        // Format RGBA string
+        function formatRgba(color) {
+            return `rgba(${color.r}, ${color.g}, ${color.b}, ${color.a})`;
+        }
+        
+        // Render all color stops in the UI
+        function renderColorStops() {
+            const container = document.getElementById('colorStopsContainer');
+            container.innerHTML = '';
+            
+            gradientStops.forEach((stop, index) => {
+                const hexColor = rgbToHex(stop.color.r, stop.color.g, stop.color.b);
+                const stopElement = document.createElement('div');
+                stopElement.className = 'color-stop';
+                stopElement.innerHTML = `
+                    <div class="color-preview" style="background: ${formatRgba(stop.color)};"></div>
+                    <div class="color-input-group">
+                        <div class="color-input-row">
+                            <label>Color:</label>
+                            <input type="color" value="${hexColor}" onchange="updateColorFromHex(${index}, this.value)" title="Choose a color">
+                        </div>
+                        <div class="color-input-row">
+                            <label>Position:</label>
+                            <input type="number" value="${stop.position}" min="0" max="100" oninput="updateStopPosition(${index}, this.value)" id="position-number-${index}" title="Position in percentage (0-100%)">
+                            <input type="range" value="${stop.position}" min="0" max="100" oninput="updateStopPosition(${index}, this.value)" id="position-range-${index}">
+                            <span>%</span>
+                        </div>
+                        <div class="color-input-row">
+                            <label>Opacity:</label>
+                            <input type="number" value="${stop.color.a}" min="0" max="1" step="0.1" oninput="updateStopOpacity(${index}, this.value)" id="opacity-number-${index}" title="Opacity value (0-1)">
+                            <input type="range" value="${stop.color.a}" min="0" max="1" step="0.1" oninput="updateStopOpacity(${index}, this.value)" id="opacity-range-${index}">
+                        </div>
+                    </div>
+                    ${index > 0 ? '<button class="remove-stop-btn" onclick="removeColorStop(' + index + ')" title="Remove this color stop">Remove</button>' : ''}
+                `;
+                container.appendChild(stopElement);
+            });
+        }
+        
+        // Update color from hex input
+        function updateColorFromHex(index, hexValue) {
+            const rgb = hexToRgb(hexValue);
+            if (rgb) {
+                gradientStops[index].color.r = rgb.r;
+                gradientStops[index].color.g = rgb.g;
+                gradientStops[index].color.b = rgb.b;
+                updateGradient();
+                showFeedback("Color updated! Your gradient has been refreshed.", "success");
+            }
+        }
+        
+        // Update stop position
+        function updateStopPosition(index, value) {
+            const positionValue = parseInt(value);
+            gradientStops[index].position = positionValue;
+            
+            // Update the specific inputs that triggered this change
+            const numberInput = document.getElementById(`position-number-${index}`);
+            const rangeInput = document.getElementById(`position-range-${index}`);
+            
+            if (numberInput) numberInput.value = positionValue;
+            if (rangeInput) rangeInput.value = positionValue;
+            
+            // Sort stops by position
+            gradientStops.sort((a, b) => a.position - b.position);
+            
+            // If the order changed, re-render
+            const newIndex = gradientStops.findIndex(stop => stop.position === positionValue);
+            if (newIndex !== index) {
+                renderColorStops();
+                showFeedback("Color stops reordered based on position values.", "info");
+            }
+            
+            updateGradient();
+        }
+        
+        // Update stop opacity
+        function updateStopOpacity(index, value) {
+            const opacityValue = parseFloat(value);
+            gradientStops[index].color.a = opacityValue;
+            
+            // Sync the range and number inputs
+            const numberInput = document.getElementById(`opacity-number-${index}`);
+            const rangeInput = document.getElementById(`opacity-range-${index}`);
+            
+            if (numberInput) numberInput.value = opacityValue;
+            if (rangeInput) rangeInput.value = opacityValue;
+            
+            updateGradient();
+        }
+        
+        // Add a new color stop
+        function addColorStop() {
+            // Find a position between the last two stops or add at the end
+            let newPosition = 50;
+            if (gradientStops.length >= 2) {
+                const lastPos = gradientStops[gradientStops.length - 1].position;
+                const secondLastPos = gradientStops[gradientStops.length - 2].position;
+                newPosition = Math.min(100, Math.floor((lastPos + secondLastPos) / 2));
+            }
+            
+            // Use the color of the last stop as a starting point
+            const lastColor = gradientStops[gradientStops.length - 1].color;
+            
+            gradientStops.push({
+                color: { r: lastColor.r, g: lastColor.g, b: lastColor.b, a: lastColor.a },
+                position: newPosition
+            });
+            
+            // Sort stops by position
+            gradientStops.sort((a, b) => a.position - b.position);
+            renderColorStops();
+            updateGradient();
+            
+            showFeedback("New color stop added! Customize it to enhance your gradient.", "success");
+        }
+        
+        // Remove a color stop
+        function removeColorStop(index) {
+            if (gradientStops.length > 2) {
+                gradientStops.splice(index, 1);
+                renderColorStops();
+                updateGradient();
+                showFeedback("Color stop removed. Your gradient has been updated.", "info");
+            } else {
+                showFeedback("You need at least 2 color stops for a gradient. Cannot remove.", "info");
+            }
+        }
+        
+        // Update the gradient preview and code
+        function updateGradient() {
+            const direction = document.getElementById('gradientDirection').value;
+            let gradientCSS = `linear-gradient(${direction}`;
+            
+            // Sort stops by position
+            const sortedStops = [...gradientStops].sort((a, b) => a.position - b.position);
+            
+            sortedStops.forEach(stop => {
+                const rgba = formatRgba(stop.color);
+                gradientCSS += `, ${rgba} ${stop.position}%`;
+            });
+            
+            gradientCSS += ')';
+            
+            // Update the preview
+            document.getElementById('gradientPreview').style.background = gradientCSS;
+            
+            // Update the code display
+            document.getElementById('gradientCode').textContent = gradientCSS;
+        }
+        
         function createGradientCanvas(width, height) {
             const canvas = document.getElementById('downloadCanvas');
             const ctx = canvas.getContext('2d');
@@ -186,14 +621,55 @@ m.top.appendChild(backgroundImage)</code></pre>
             canvas.width = width;
             canvas.height = height;
             
-            // Create linear gradient
-            const gradient = ctx.createLinearGradient(0, 0, width, 0);
+            // Get the current gradient direction
+            const direction = document.getElementById('gradientDirection').value;
             
-            // Add color stops based on the CSS gradient
-            gradient.addColorStop(0, 'rgba(4, 3, 73, 1)');      // 0%
-            gradient.addColorStop(0.28, 'rgba(4, 3, 73, 1)');   // 28%
-            gradient.addColorStop(0.65, 'rgba(4, 3, 73, 0.6)'); // 65%
-            gradient.addColorStop(1, 'rgba(0, 0, 0, 0.4)');     // 100%
+            // Determine gradient coordinates based on direction
+            let x0 = 0, y0 = 0, x1 = 0, y1 = 0;
+            
+            switch (direction) {
+                case 'to right':
+                    x1 = width;
+                    break;
+                case 'to left':
+                    x0 = width;
+                    break;
+                case 'to bottom':
+                    y1 = height;
+                    break;
+                case 'to top':
+                    y0 = height;
+                    break;
+                case 'to bottom right':
+                    x1 = width;
+                    y1 = height;
+                    break;
+                case 'to bottom left':
+                    x0 = width;
+                    y1 = height;
+                    break;
+                case 'to top right':
+                    x1 = width;
+                    y0 = height;
+                    break;
+                case 'to top left':
+                    x0 = width;
+                    y0 = height;
+                    break;
+                default:
+                    x1 = width;
+            }
+            
+            // Create linear gradient
+            const gradient = ctx.createLinearGradient(x0, y0, x1, y1);
+            
+            // Sort stops by position
+            const sortedStops = [...gradientStops].sort((a, b) => a.position - b.position);
+            
+            // Add color stops
+            sortedStops.forEach(stop => {
+                gradient.addColorStop(stop.position / 100, formatRgba(stop.color));
+            });
             
             // Fill the canvas with gradient
             ctx.fillStyle = gradient;
@@ -215,6 +691,8 @@ m.top.appendChild(backgroundImage)</code></pre>
                 a.click();
                 document.body.removeChild(a);
                 URL.revokeObjectURL(url);
+                
+                showFeedback(`Gradient image (${width}×${height}) downloaded successfully!`, "success");
             }, 'image/png');
         }
         
@@ -223,17 +701,15 @@ m.top.appendChild(backgroundImage)</code></pre>
             const height = parseInt(document.getElementById('customHeight').value);
             
             if (width > 0 && height > 0) {
-                downloadGradient(width, height);
+                if (width > 4000 || height > 4000) {
+                    showFeedback("Image dimensions too large. Please use values below 4000px.", "info");
+                } else {
+                    downloadGradient(width, height);
+                }
             } else {
-                alert('Please enter valid width and height values.');
+                showFeedback("Please enter valid width and height values greater than 0.", "info");
             }
         }
-
-        // Initialize preview
-        document.addEventListener('DOMContentLoaded', function() {
-            // The CSS gradient is already applied to the preview div
-            console.log('Gradient preview loaded');
-        });
     </script>
 </body>
 </html>
