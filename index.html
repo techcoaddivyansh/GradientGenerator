@@ -5,215 +5,403 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gradient Image Generator</title>
     <style>
+        * {
+            box-sizing: border-box;
+        }
         body {
             margin: 0;
-            padding: 20px;
-            font-family: Arial, sans-serif;
-            background: #f0f0f0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f8f9fa;
+            height: 100vh;
+            overflow-x: hidden;
         }
         .container {
-            max-width: 1200px;
-            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            grid-template-rows: auto 1fr;
+            height: 100vh;
             background: white;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            gap: 0;
+            transition: grid-template-columns 0.3s ease;
         }
+        .container.sidebar-collapsed {
+            grid-template-columns: 0px 1fr;
+        }
+        .header {
+            grid-column: 1 / -1;
+            background: #2c3e50;
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 20px;
+            font-weight: 600;
+        }
+        .header p {
+            margin: 0;
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        .sidebar {
+            background: #ecf0f1;
+            padding: 15px;
+            overflow-y: auto;
+            overflow-x: hidden;
+            border-right: 1px solid #bdc3c7;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+        .sidebar.collapsed {
+            margin-left: -350px;
+            opacity: 0;
+        }
+        .sidebar-toggle {
+            position: fixed;
+            left: 350px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: #34495e;
+            color: white;
+            border: none;
+            width: 30px;
+            height: 60px;
+            border-radius: 0 8px 8px 0;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            z-index: 1000;
+            transition: all 0.3s ease;
+            box-shadow: 2px 0 8px rgba(0,0,0,0.15);
+        }
+        .sidebar-toggle:hover {
+            background: #2c3e50;
+            width: 32px;
+        }
+        .sidebar-toggle.collapsed {
+            left: 0;
+            border-radius: 0 8px 8px 0;
+            background: #3498db;
+        }
+        .sidebar-toggle.collapsed:hover {
+            background: #2980b9;
+            width: 32px;
+        }
+        .main-preview {
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: #ffffff;
+            overflow: auto;
+            width: 100%;
+            min-height: 100%;
+        }
+        .container.sidebar-collapsed .main-preview {
+            margin: 0 auto;
+            max-width: none;
+        }
+
         .gradient-preview {
             width: 758px;
             height: 315px;
             background: linear-gradient(to right, rgba(4, 3, 73, 1) 28%, rgba(4, 3, 73, 0.6) 65%, rgba(0, 0, 0, 0.4));
-            border: 2px solid #ccc;
-            margin: 20px auto;
-            border-radius: 5px;
+            border: 2px solid #bdc3c7;
+            border-radius: 8px;
             transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
         }
         .controls {
             display: flex;
-            gap: 20px;
+            gap: 15px;
             align-items: center;
-            margin: 20px 0;
+            margin: 15px 0;
             flex-wrap: wrap;
         }
         .control-group {
             display: flex;
             flex-direction: column;
-            gap: 5px;
+            gap: 8px;
+            width: 100%;
+        }
+        .section {
+            background: white;
+            margin-bottom: 8px;
+            border-radius: 8px;
+            border: 1px solid #dee2e6;
+            overflow: hidden;
+        }
+        .section:last-child {
+            margin-bottom: 0;
+        }
+        .section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 15px;
+            cursor: pointer;
+            background: #f8f9fa;
+            border-bottom: 1px solid #dee2e6;
+            transition: background-color 0.2s ease;
+        }
+        .section-header:hover {
+            background: #e9ecef;
+        }
+        .section-header.active {
+            background: #3498db;
+            color: white;
+        }
+        .section-header h3 {
+            margin: 0;
+            font-size: 14px;
+            color: inherit;
+            font-weight: 600;
+        }
+        .section-toggle {
+            font-size: 12px;
+            font-weight: bold;
+            user-select: none;
+        }
+        .section-content {
+            padding: 0 15px;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease, padding 0.3s ease;
+        }
+        .section-content.expanded {
+            max-height: 60vh;
+            padding: 12px;
+            overflow-y: auto;
         }
         label {
-            font-weight: bold;
-            color: #333;
+            font-weight: 500;
+            color: #2c3e50;
+            font-size: 13px;
+            margin-bottom: 4px;
         }
         input, select {
-            padding: 8px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            transition: border-color 0.3s ease;
+            padding: 8px 10px;
+            border: 1px solid #bdc3c7;
+            border-radius: 6px;
+            transition: all 0.2s ease;
+            font-size: 13px;
+            width: 100%;
+            min-width: 0;
+        }
+        input[type="number"] {
+            min-width: 70px;
         }
         input:focus, select:focus {
-            border-color: #007bff;
+            border-color: #3498db;
             outline: none;
-            box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+            box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
         }
         button {
-            background: #007bff;
-            color: white;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 16px;
-            font-weight: bold;
-            transition: background 0.3s ease, transform 0.1s ease;
-        }
-        button:hover {
-            background: #0056b3;
-        }
-        button:active {
-            transform: scale(0.98);
-        }
-        .download-section {
-            margin-top: 20px;
-            padding: 20px;
-            background: #f8f9fa;
-            border-radius: 5px;
-        }
-        .size-options {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-            margin: 10px 0;
-        }
-        .size-btn {
-            background: #28a745;
+            background: #3498db;
             color: white;
             border: none;
             padding: 8px 16px;
-            border-radius: 4px;
+            border-radius: 6px;
             cursor: pointer;
-            font-size: 14px;
+            font-size: 13px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            width: 100%;
+        }
+        button:hover {
+            background: #2980b9;
+            transform: translateY(-1px);
+        }
+        button:active {
+            transform: translateY(0);
+        }
+        .size-options {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin: 12px 0;
+        }
+        .size-btn {
+            background: #27ae60;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 500;
+            width: 100%;
         }
         .size-btn:hover {
-            background: #1e7e34;
+            background: #229954;
+            transform: translateY(-1px);
+        }
+        .custom-size {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-top: 8px;
+        }
+        .custom-size input {
+            margin: 0;
         }
         #downloadCanvas {
             display: none;
         }
-        .gradient-info {
-            background: #e9ecef;
-            padding: 15px;
-            border-radius: 5px;
-            margin: 20px 0;
-        }
         .color-stops {
             display: flex;
-            gap: 15px;
-            margin: 10px 0;
-            flex-wrap: wrap;
+            flex-direction: column;
+            gap: 6px;
+            margin: 8px 0;
         }
         .color-stop {
             display: flex;
             flex-direction: column;
-            align-items: center;
-            gap: 5px;
-            border: 1px solid #ddd;
-            padding: 10px;
-            border-radius: 5px;
-            background: white;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-            transition: box-shadow 0.3s ease, transform 0.3s ease;
+            gap: 6px;
+            border: 1px solid #dee2e6;
+            padding: 8px;
+            border-radius: 6px;
+            background: #f8f9fa;
+            transition: all 0.2s ease;
         }
         .color-stop:hover {
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            border-color: #3498db;
+            transform: translateY(-1px);
         }
         .color-preview {
-            width: 50px;
-            height: 30px;
+            width: 100%;
+            height: 20px;
             border-radius: 4px;
-            border: 1px solid #ccc;
+            border: 1px solid #bdc3c7;
+            margin-bottom: 6px;
         }
         .color-input-group {
             display: flex;
             flex-direction: column;
-            gap: 8px;
-            margin-top: 5px;
+            gap: 4px;
         }
         .color-input-row {
+            display: grid;
+            grid-template-columns: auto 1fr auto;
+            align-items: center;
+            gap: 8px;
+        }
+        .color-input-row.color-main {
             display: flex;
             align-items: center;
-            gap: 5px;
+            gap: 8px;
+        }
+        .color-input-row.color-main input[type="text"] {
+            transition: all 0.3s ease;
+        }
+        .color-input-row.color-main input[type="text"]:focus {
+            border-color: #3498db;
+            box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
         }
         .color-input-row label {
-            min-width: 70px;
-            font-size: 14px;
+            font-size: 12px;
+            min-width: 50px;
         }
         .color-input-row input[type="number"] {
             width: 60px;
+            min-width: 60px;
         }
-        .color-input-row input[type="range"] {
-            width: 100px;
+        .color-input-row         input[type="range"] {
+            width: 100%;
+            -webkit-appearance: none;
+            appearance: none;
+            height: 8px;
+            background: #dee2e6;
+            border-radius: 4px;
+            outline: none;
+            overflow: hidden;
+        }
+        
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            background: #3498db;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2), -407px 0 0 400px #3498db;
+            transition: all 0.2s ease;
+        }
+        
+        input[type="range"]::-webkit-slider-thumb:hover {
+            background: #2980b9;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3), -407px 0 0 400px #2980b9;
+        }
+        
+        input[type="range"]::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            background: #3498db;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            transition: all 0.2s ease;
+        }
+        
+        input[type="range"]::-moz-range-thumb:hover {
+            background: #2980b9;
+        }
+        
+        input[type="range"]::-moz-range-track {
+            height: 8px;
+            background: linear-gradient(to right, #3498db 0%, #3498db var(--value, 0%), #dee2e6 var(--value, 0%), #dee2e6 100%);
+            border-radius: 4px;
+            border: none;
+        }
+        .color-input-row input[type="color"] {
+            width: 40px;
+            height: 30px;
+            padding: 0;
+            border: 1px solid #bdc3c7;
         }
         .add-stop-btn {
             background: #6c757d;
-            margin-top: 10px;
+            margin-top: 8px;
+        }
+        .add-stop-btn:hover {
+            background: #5a6268;
         }
         .remove-stop-btn {
-            background: #dc3545;
+            background: #e74c3c;
             color: white;
             border: none;
             padding: 5px 10px;
             border-radius: 4px;
             cursor: pointer;
-            font-size: 12px;
-            margin-top: 5px;
+            font-size: 11px;
+            margin-top: 6px;
+            width: 100%;
         }
         .remove-stop-btn:hover {
-            background: #c82333;
+            background: #c0392b;
+            transform: translateY(-1px);
         }
         .direction-control {
-            margin: 15px 0;
-        }
-        .tooltip {
-            position: relative;
-            display: inline-block;
-            cursor: help;
-            margin-left: 5px;
-        }
-        .tooltip .tooltiptext {
-            visibility: hidden;
-            width: 200px;
-            background-color: #333;
-            color: #fff;
-            text-align: center;
-            border-radius: 6px;
-            padding: 8px;
-            position: absolute;
-            z-index: 1;
-            bottom: 125%;
-            left: 50%;
-            margin-left: -100px;
-            opacity: 0;
-            transition: opacity 0.3s;
-            font-weight: normal;
-            font-size: 12px;
-            line-height: 1.4;
-        }
-        .tooltip:hover .tooltiptext {
-            visibility: visible;
-            opacity: 1;
-        }
-        .section-header {
-            display: flex;
-            align-items: center;
-            margin-bottom: 15px;
+            margin: 0;
         }
         .feedback-message {
             display: none;
-            padding: 10px 15px;
-            margin: 10px 0;
-            border-radius: 4px;
-            font-size: 14px;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 13px;
             animation: fadeIn 0.5s;
+            max-width: 300px;
         }
         .success-message {
             background-color: #d4edda;
@@ -236,55 +424,41 @@
         .fadeOut {
             animation: fadeOut 0.5s forwards;
         }
-        .step-indicator {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 20px;
-        }
-        .step {
-            flex: 1;
-            text-align: center;
-            padding: 10px;
-            background: #e9ecef;
-            border-radius: 4px;
-            margin: 0 5px;
-            font-weight: bold;
-            color: #495057;
-        }
-        .step.active {
-            background: #007bff;
-            color: white;
-        }
-        .step-content {
-            margin-bottom: 30px;
-        }
-        .help-icon {
-            color: #007bff;
-            font-size: 16px;
-            cursor: help;
-            margin-left: 5px;
-        }
-        .background-image-controls {
-            margin: 20px 0;
-            padding: 15px;
-            background: #f8f9fa;
-            border-radius: 5px;
-            border: 1px solid #dee2e6;
-        }
+
         .image-position-controls {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 15px;
-            margin-top: 15px;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-top: 10px;
         }
         .preview-container {
             position: relative;
             width: 758px;
             height: 315px;
-            margin: 20px auto;
-            border-radius: 5px;
+            border-radius: 8px;
             overflow: hidden;
-            border: 2px solid #ccc;
+            border: 2px solid #bdc3c7;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            transition: all 0.3s ease;
+            margin: 10px auto;
+        }
+        .container.sidebar-collapsed .preview-container {
+            margin: 10px auto;
+        }
+        .css-code-section {
+            transition: all 0.3s ease;
+        }
+        .container.sidebar-collapsed .css-code-section {
+            display: flex !important;
+            flex-direction: column !important;
+            align-items: center !important;
+            justify-content: center !important;
+            width: 100% !important;
+            margin: 20px auto 0 auto !important;
+        }
+        .container.sidebar-collapsed .css-code-section > div {
+            max-width: 800px !important;
+            width: 100% !important;
         }
         .background-image {
             position: absolute;
@@ -306,18 +480,25 @@
         }
         .image-upload-btn {
             background: #6c757d;
-            margin-right: 10px;
+        }
+        .image-upload-btn:hover {
+            background: #5a6268;
         }
         .remove-image-btn {
-            background: #dc3545;
+            background: #e74c3c;
+        }
+        .remove-image-btn:hover {
+            background: #c0392b;
         }
         .image-controls-row {
             display: flex;
             align-items: center;
-            margin-bottom: 10px;
+            gap: 8px;
+            margin-bottom: 8px;
         }
         .image-controls-row label {
-            min-width: 120px;
+            min-width: 80px;
+            font-size: 12px;
         }
         .file-upload-wrapper {
             position: relative;
@@ -336,14 +517,18 @@
         .position-fine-controls {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: 10px;
-            margin-top: 15px;
-            padding: 10px;
-            background: #f0f0f0;
-            border-radius: 5px;
+            gap: 6px;
+            margin-top: 8px;
+            padding: 8px;
+            background: #f8f9fa;
+            border-radius: 6px;
+            border: 1px solid #dee2e6;
         }
         .position-fine-controls input[type="number"] {
-            width: 70px;
+            width: 100%;
+            font-size: 12px;
+            padding: 6px 8px;
+            min-width: 60px;
         }
         .position-fine-controls .center-cell {
             display: flex;
@@ -351,248 +536,245 @@
             align-items: center;
         }
         .position-fine-controls .arrow-btn {
-            width: 40px;
-            height: 40px;
+            width: 32px;
+            height: 32px;
             padding: 0;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 18px;
+            font-size: 14px;
             background: #6c757d;
-            margin: 2px;
+            margin: 1px;
+            border-radius: 4px;
         }
         .position-fine-controls .arrow-btn:hover {
             background: #5a6268;
         }
         .position-fine-controls .reset-btn {
-            background: #ffc107;
-            color: #212529;
+            background: #f39c12;
+            color: white;
         }
         .position-fine-controls .reset-btn:hover {
-            background: #e0a800;
+            background: #e67e22;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Roku Gradient Image Generator</h1>
-        <p>Create custom gradient images for your Roku BrightScript applications with this easy-to-use tool</p>
-        
-        <div id="feedback" class="feedback-message"></div>
-        
-        <div class="step-indicator">
-            <div class="step active">1. Design Gradient</div>
-            <div class="step">2. Preview Result</div>
-            <div class="step">3. Download Image</div>
+        <div class="header">
+            <div>
+                <h1>Gradient Image Generator</h1>
+                <p>Create custom gradient images for your Roku BrightScript applications</p>
+            </div>
+            <div style="display: flex; align-items: center; gap: 15px;">
+                <button onclick="openDownloadPopup()" style="background: #27ae60; color: white; border: none; padding: 10px 20px; border-radius: 6px; font-size: 14px; cursor: pointer; transition: all 0.2s ease;" onmouseover="this.style.background='#229954'" onmouseout="this.style.background='#27ae60'">📥 Download</button>
+                <div id="feedback" class="feedback-message"></div>
+            </div>
         </div>
         
-        <div class="step-content">
-            <div class="section-header">
-                <h3>Gradient Direction</h3>
-                <div class="tooltip">
-                    <span class="help-icon">?</span>
-                    <span class="tooltiptext">Choose which way your gradient will flow. This determines the start and end points of your gradient.</span>
+        <button onclick="toggleSidebar()" id="sidebarToggle" class="sidebar-toggle">‹</button>
+        <div class="sidebar" id="sidebar">
+            <div class="section">
+                <div class="section-header active" onclick="toggleSection(this)">
+                    <h3>Display Settings</h3>
+                    <span class="section-toggle expanded">▼</span>
                 </div>
-            </div>
-            
-            <div class="controls">
-                <div class="control-group direction-control">
-                    <label for="gradientDirection">Select Direction:</label>
-                    <select id="gradientDirection" onchange="updateGradient()">
-                        <option value="to right">Left to Right</option>
-                        <option value="to left">Right to Left</option>
-                        <option value="to bottom">Top to Bottom</option>
-                        <option value="to top">Bottom to Top</option>
-                        <option value="to bottom right">Top Left to Bottom Right</option>
-                        <option value="to bottom left">Top Right to Bottom Left</option>
-                        <option value="to top right">Bottom Left to Top Right</option>
-                        <option value="to top left">Bottom Right to Top Left</option>
-                    </select>
-                </div>
-            </div>
-            
-            <div class="section-header">
-                <h3>Color Stops</h3>
-                <div class="tooltip">
-                    <span class="help-icon">?</span>
-                    <span class="tooltiptext">Color stops define the colors in your gradient and where they transition. Add multiple stops for more complex gradients.</span>
-                </div>
-            </div>
-            
-            <div id="colorStopsContainer" class="color-stops">
-                <!-- Color stops will be dynamically generated here -->
-            </div>
-            
-            <button id="addStopBtn" class="add-stop-btn" onclick="addColorStop()">+ Add Color Stop</button>
-        </div>
-        
-        <div class="step-content">
-            <div class="section-header">
-                <h3>Background Image (Optional)</h3>
-                <div class="tooltip">
-                    <span class="help-icon">?</span>
-                    <span class="tooltiptext">Upload an image to see how your gradient looks as an overlay. You can adjust the position and size of the image.</span>
-                </div>
-            </div>
-            
-            <div class="background-image-controls">
-                <div class="image-controls-row">
-                    <div class="file-upload-wrapper">
-                        <button class="image-upload-btn">Choose Image</button>
-                        <input type="file" id="backgroundImageUpload" accept="image/*" onchange="handleImageUpload(event)">
-                    </div>
-                    <button class="remove-image-btn" onclick="removeBackgroundImage()" id="removeImageBtn" disabled>Remove Image</button>
-                </div>
-                
-                <div class="image-controls-row" style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #dee2e6;">
-                    <label for="imageUrlInput" style="min-width: 80px;">Image URL:</label>
-                    <input type="url" id="imageUrlInput" placeholder="https://example.com/image.jpg" style="flex: 1; margin-right: 10px;">
-                    <button class="image-upload-btn" onclick="loadImageFromUrl()" id="loadUrlBtn">Load from URL</button>
-                </div>
-                
-                <div class="image-position-controls" id="imagePositionControls" style="display: none;">
+                <div class="section-content expanded">
                     <div class="control-group">
-                        <label for="imageSize">Image Size:</label>
-                        <select id="imageSize" onchange="updateBackgroundImage()">
-                            <option value="cover">Cover (Fill)</option>
-                            <option value="contain">Contain (Fit)</option>
-                            <option value="100%">Original Size</option>
-                            <option value="150%">150%</option>
-                            <option value="200%">200%</option>
-                            <option value="50%">50%</option>
+                        <label for="gradientDirection">Gradient Direction:</label>
+                        <select id="gradientDirection" onchange="updateGradient()">
+                            <option value="to right">Left to Right</option>
+                            <option value="to left">Right to Left</option>
+                            <option value="to bottom">Top to Bottom</option>
+                            <option value="to top">Bottom to Top</option>
+                            <option value="to bottom right">Top Left to Bottom Right</option>
+                            <option value="to bottom left">Top Right to Bottom Left</option>
+                            <option value="to top right">Bottom Left to Top Right</option>
+                            <option value="to top left">Bottom Right to Top Left</option>
                         </select>
                     </div>
                     
-                    <div class="control-group">
-                        <label for="imagePosition">Position:</label>
-                        <select id="imagePosition" onchange="updateBackgroundImage()">
-                            <option value="center center">Center</option>
-                            <option value="top left">Top Left</option>
-                            <option value="top center">Top</option>
-                            <option value="top right">Top Right</option>
-                            <option value="center left">Left</option>
-                            <option value="center right">Right</option>
-                            <option value="bottom left">Bottom Left</option>
-                            <option value="bottom center">Bottom</option>
-                            <option value="bottom right">Bottom Right</option>
-                        </select>
-                    </div>
-                </div>
-                
-                <div class="section-header" style="margin-top: 15px; margin-bottom: 5px;">
-                    <h4>Fine Position Adjustment</h4>
-                    <div class="tooltip">
-                        <span class="help-icon">?</span>
-                        <span class="tooltiptext">Adjust the image position by specific pixel values or use the arrow buttons to nudge the image.</span>
-                    </div>
-                </div>
-                
-                <div class="position-fine-controls">
-                    <div></div>
-                    <div class="center-cell">
-                        <button class="arrow-btn" onclick="moveImage(0, -10)" title="Move Up 10px">↑</button>
-                    </div>
-                    <div></div>
-                    
-                    <div class="center-cell">
-                        <button class="arrow-btn" onclick="moveImage(-10, 0)" title="Move Left 10px">←</button>
-                    </div>
-                    <div class="center-cell">
-                        <button class="reset-btn arrow-btn" onclick="resetImagePosition()" title="Reset Position">⟲</button>
-                    </div>
-                    <div class="center-cell">
-                        <button class="arrow-btn" onclick="moveImage(10, 0)" title="Move Right 10px">→</button>
-                    </div>
-                    
-                    <div></div>
-                    <div class="center-cell">
-                        <button class="arrow-btn" onclick="moveImage(0, 10)" title="Move Down 10px">↓</button>
-                    </div>
-                    <div></div>
-                    
-                    <div class="image-controls-row">
-                        <label for="imageOffsetX">X Offset (px):</label>
-                        <input type="number" id="imageOffsetX" value="0" onchange="applyImageOffset()" title="Horizontal offset in pixels">
-                    </div>
-                    <div></div>
-                    <div class="image-controls-row">
-                        <label for="imageOffsetY">Y Offset (px):</label>
-                        <input type="number" id="imageOffsetY" value="0" onchange="applyImageOffset()" title="Vertical offset in pixels">
+                    <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #dee2e6;">
+                        <div class="control-group">
+                            <label>Preview Size:</label>
+                            <div class="size-options">
+                                <button class="size-btn" onclick="setPreviewSize(758, 315)">758×315</button>
+                                <button class="size-btn" onclick="setPreviewSize(1920, 1080)">1920×1080</button>
+                                <button class="size-btn" onclick="setPreviewSize(1280, 720)">1280×720</button>
+                                <button class="size-btn" onclick="setPreviewSize(800, 450)">800×450</button>
+                            </div>
+                        </div>
+                        
+                        <div style="margin-top: 12px;">
+                            <div class="custom-size">
+                                <div class="control-group">
+                                    <label for="previewWidth">Width:</label>
+                                    <input type="number" id="previewWidth" value="758" min="200" max="1920" onchange="updatePreviewSize()">
+                                </div>
+                                <div class="control-group">
+                                    <label for="previewHeight">Height:</label>
+                                    <input type="number" id="previewHeight" value="315" min="100" max="1080" onchange="updatePreviewSize()">
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
             
-            <div class="section-header">
-                <h3>Gradient Preview</h3>
-                <div class="tooltip">
-                    <span class="help-icon">?</span>
-                    <span class="tooltiptext">This is how your gradient will look. Any changes you make will be shown here in real-time.</span>
+            <div class="section">
+                <div class="section-header active" onclick="toggleSection(this)">
+                    <h3>Color Stops</h3>
+                    <span class="section-toggle expanded">▼</span>
                 </div>
-            </div>
-            
-            <div class="gradient-info">
-                <h4>CSS Code:</h4>
-                <code id="gradientCode">linear-gradient(to right, rgba(4, 3, 73, 1) 28%, rgba(4, 3, 73, 0.6) 65%, rgba(0, 0, 0, 0.4))</code>
+                <div class="section-content expanded">
+                    <div id="colorStopsContainer" class="color-stops">
+                        <!-- Color stops will be dynamically generated here -->
+                    </div>
+                    
+                    <button id="addStopBtn" class="add-stop-btn" onclick="addColorStop()">+ Add Color Stop</button>
+                </div>
             </div>
 
+            <div class="section">
+                <div class="section-header" onclick="toggleSection(this)">
+                    <h3>Background Image</h3>
+                    <span class="section-toggle">▶</span>
+                </div>
+                <div class="section-content">
+                    <div class="image-controls-row">
+                        <div class="file-upload-wrapper">
+                            <button class="image-upload-btn">Choose Image</button>
+                            <input type="file" id="backgroundImageUpload" accept="image/*" onchange="handleImageUpload(event)">
+                        </div>
+                        <button class="remove-image-btn" onclick="removeBackgroundImage()" id="removeImageBtn" disabled>Remove Image</button>
+                    </div>
+                    
+                    <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #dee2e6;">
+                        <div class="control-group">
+                            <label for="imageUrlInput">Image URL:</label>
+                            <input type="url" id="imageUrlInput" placeholder="https://example.com/image.jpg" style="font-size: 12px;">
+                        </div>
+                        <button class="image-upload-btn" onclick="loadImageFromUrl()" id="loadUrlBtn" style="margin-top: 8px;">Load from URL</button>
+                        <div id="urlStatus" style="margin-top: 8px; padding: 6px 8px; border-radius: 4px; font-size: 11px; display: none;"></div>
+                    </div>
+                    
+                    <div class="image-position-controls" id="imagePositionControls" style="display: none;">
+                        <div class="control-group">
+                            <label for="imageSize">Image Size:</label>
+                            <select id="imageSize" onchange="updateBackgroundImage()">
+                                <option value="cover">Cover (Fill)</option>
+                                <option value="contain">Contain (Fit)</option>
+                                <option value="100%">Original Size</option>
+                                <option value="150%">150%</option>
+                                <option value="200%">200%</option>
+                                <option value="50%">50%</option>
+                            </select>
+                        </div>
+                        
+                        <div class="control-group">
+                            <label for="imagePosition">Position:</label>
+                            <select id="imagePosition" onchange="updateBackgroundImage()">
+                                <option value="center center">Center</option>
+                                <option value="top left">Top Left</option>
+                                <option value="top center">Top</option>
+                                <option value="top right">Top Right</option>
+                                <option value="center left">Left</option>
+                                <option value="center right">Right</option>
+                                <option value="bottom left">Bottom Left</option>
+                                <option value="bottom center">Bottom</option>
+                                <option value="bottom right">Bottom Right</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <h4 style="margin: 15px 0 8px 0; font-size: 14px; color: #2c3e50;">Fine Position Adjustment</h4>
+                    
+                    <div class="position-fine-controls">
+                        <div></div>
+                        <div class="center-cell">
+                            <button class="arrow-btn" onclick="moveImage(0, -10)" title="Move Up 10px">↑</button>
+                        </div>
+                        <div></div>
+                        
+                        <div class="center-cell">
+                            <button class="arrow-btn" onclick="moveImage(-10, 0)" title="Move Left 10px">←</button>
+                        </div>
+                        <div class="center-cell">
+                            <button class="reset-btn arrow-btn" onclick="resetImagePosition()" title="Reset Position">⟲</button>
+                        </div>
+                        <div class="center-cell">
+                            <button class="arrow-btn" onclick="moveImage(10, 0)" title="Move Right 10px">→</button>
+                        </div>
+                        
+                        <div></div>
+                        <div class="center-cell">
+                            <button class="arrow-btn" onclick="moveImage(0, 10)" title="Move Down 10px">↓</button>
+                        </div>
+                        <div></div>
+                        
+                                            <div style="grid-column: 1 / 4; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 8px;">
+                        <div class="control-group">
+                            <label for="imageOffsetX" style="font-size: 12px;">X Offset (px):</label>
+                            <input type="number" id="imageOffsetX" value="0" onchange="applyImageOffset()" title="Horizontal offset in pixels" style="width: 100%;">
+                        </div>
+                        <div class="control-group">
+                            <label for="imageOffsetY" style="font-size: 12px;">Y Offset (px):</label>
+                            <input type="number" id="imageOffsetY" value="0" onchange="applyImageOffset()" title="Vertical offset in pixels" style="width: 100%;">
+                        </div>
+                    </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="main-preview">
             <div class="preview-container" id="previewContainer">
                 <img id="backgroundImage" class="background-image" style="display: none;">
                 <div class="gradient-overlay" id="gradientPreview"></div>
             </div>
+            
+            <div class="css-code-section" style="margin-top: 20px; text-align: center; width: 100%; display: flex; flex-direction: column; align-items: center;">
+                <h4 style="margin: 0 0 10px 0; color: #2c3e50;">CSS Code:</h4>
+                <div style="display: flex; align-items: center; gap: 8px; justify-content: center; max-width: 600px; width: 100%; margin: 0 auto;">
+                    <div style="background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 6px; padding: 10px 12px; flex: 1; overflow-x: auto; min-width: 0; max-width: 550px;">
+                        <code id="gradientCode" style="font-size: 12px; color: #2c3e50; font-family: 'Courier New', monospace; white-space: nowrap; display: block;">linear-gradient(to right, rgba(4, 3, 73, 1) 28%, rgba(4, 3, 73, 0.6) 65%, rgba(0, 0, 0, 0.4))</code>
+                    </div>
+                    <button onclick="copyGradientCode()" id="copyBtn" title="Copy CSS" style="background: #3498db; color: white; border: none; padding: 8px 10px; border-radius: 4px; font-size: 12px; cursor: pointer; transition: background 0.2s ease; flex-shrink: 0; min-width: 40px; height: 36px; width: 23px;" onmouseover="this.style.background='#2980b9'" onmouseout="this.style.background='#3498db'">📋</button>
+                </div>
+                <div id="copyFeedback" style="margin-top: 8px; font-size: 12px; color: #27ae60; display: none; text-align: center;">✓ Copied to clipboard!</div>
+            </div>
         </div>
         
-        <div class="step-content">
-            <div class="section-header">
-                <h3>Download Options</h3>
-                <div class="tooltip">
-                    <span class="help-icon">?</span>
-                    <span class="tooltiptext">Choose a size for your gradient image or enter custom dimensions.</span>
-                </div>
-            </div>
-            
-            <div class="download-section">
-                <h4>Common Roku Sizes:</h4>
-                <p>Choose your preferred size for Roku application:</p>
-                
-                <div class="size-options">
-                    <button class="size-btn" onclick="downloadGradient(1920, 1080)">1920×1080 (Full HD)</button>
-                    <button class="size-btn" onclick="downloadGradient(1280, 720)">1280×720 (HD)</button>
-                    <button class="size-btn" onclick="downloadGradient(800, 450)">800×450 (Small)</button>
-                    <button class="size-btn" onclick="downloadGradient(400, 225)">400×225 (Thumbnail)</button>
+        <!-- Download Popup -->
+        <div id="downloadPopup" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center;">
+            <div style="background: white; padding: 30px; border-radius: 12px; box-shadow: 0 8px 32px rgba(0,0,0,0.3); max-width: 400px; width: 90%;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h3 style="margin: 0; color: #2c3e50;">Download Gradient</h3>
+                    <button onclick="closeDownloadPopup()" style="background: none; border: none; font-size: 20px; cursor: pointer; color: #7f8c8d;">×</button>
                 </div>
                 
-                <h4>Custom Size:</h4>
-                <div class="controls">
-                    <div class="control-group">
-                        <label for="customWidth">Width (px):</label>
-                        <input type="number" id="customWidth" value="1920" min="1" max="4000">
+                <div style="margin-bottom: 20px;">
+                    <label style="display: block; margin-bottom: 10px; font-weight: 500; color: #2c3e50;">Standard Sizes:</label>
+                    <div class="size-options">
+                        <button class="size-btn" onclick="downloadGradient(1920, 1080)">1920×1080</button>
+                        <button class="size-btn" onclick="downloadGradient(1280, 720)">1280×720</button>
+                        <button class="size-btn" onclick="downloadGradient(800, 450)">800×450</button>
+                        <button class="size-btn" onclick="downloadGradient(400, 225)">400×225</button>
                     </div>
-                    <div class="control-group">
-                        <label for="customHeight">Height (px):</label>
-                        <input type="number" id="customHeight" value="1080" min="1" max="4000">
+                </div>
+                
+                <div style="margin-bottom: 20px;">
+                    <label style="display: block; margin-bottom: 10px; font-weight: 500; color: #2c3e50;">Custom Size:</label>
+                    <div class="custom-size">
+                        <input type="number" id="customWidth" value="1920" min="1" max="4000" placeholder="Width">
+                        <input type="number" id="customHeight" value="1080" min="1" max="4000" placeholder="Height">
                     </div>
-                    <button onclick="downloadCustomSize()">Download Custom Size</button>
+                    <button onclick="downloadCustomSize()" style="background: #27ae60; color: white; border: none; padding: 10px 20px; border-radius: 6px; margin-top: 10px; width: 100%; cursor: pointer;" onmouseover="this.style.background='#229954'" onmouseout="this.style.background='#27ae60'">Download Custom Size</button>
                 </div>
             </div>
         </div>
 
-        <canvas id="downloadCanvas"></canvas>
-
-        <div class="gradient-info">
-            <div class="section-header">
-                <h3>Usage in Roku BrightScript</h3>
-                <div class="tooltip">
-                    <span class="help-icon">?</span>
-                    <span class="tooltiptext">Copy this code to use your gradient image in a Roku application.</span>
-                </div>
-            </div>
-            <p>After downloading, add the image to your <code>pkg:/images/</code> directory and use:</p>
-            <pre><code>backgroundImage = CreateObject("roSGNode", "Poster")
-backgroundImage.uri = "pkg:/images/gradient_background.png"
-backgroundImage.width = 1920
-backgroundImage.height = 1080
-m.top.appendChild(backgroundImage)</code></pre>
-        </div>
+        <canvas id="downloadCanvas" style="display: none;"></canvas>
     </div>
 
     <script>
@@ -603,14 +785,134 @@ m.top.appendChild(backgroundImage)</code></pre>
             { color: { r: 0, g: 0, b: 0, a: 0.4 }, position: 100 }
         ];
         
+        // Preview size functionality
+        function setPreviewSize(width, height) {
+            document.getElementById('previewWidth').value = width;
+            document.getElementById('previewHeight').value = height;
+            updatePreviewSize();
+        }
+        
+        function updatePreviewSize() {
+            const width = parseInt(document.getElementById('previewWidth').value);
+            const height = parseInt(document.getElementById('previewHeight').value);
+            
+            if (width > 0 && height > 0) {
+                const previewContainer = document.getElementById('previewContainer');
+                const gradientOverlay = document.getElementById('gradientPreview');
+                const mainPreview = document.querySelector('.main-preview');
+                
+                // Update preview container size
+                if (previewContainer) {
+                    previewContainer.style.width = width + 'px';
+                    previewContainer.style.height = height + 'px';
+                }
+                
+                // Update gradient overlay size
+                if (gradientOverlay) {
+                    gradientOverlay.style.width = width + 'px';
+                    gradientOverlay.style.height = height + 'px';
+                }
+                
+                // Ensure proper scrolling for large sizes
+                if (mainPreview) {
+                    if (width > 1000 || height > 600) {
+                        mainPreview.style.justifyContent = 'flex-start';
+                        mainPreview.style.alignItems = 'flex-start';
+                        mainPreview.style.paddingTop = '40px';
+                    } else {
+                        mainPreview.style.justifyContent = 'center';
+                        mainPreview.style.alignItems = 'center';
+                        mainPreview.style.paddingTop = '20px';
+                    }
+                }
+                
+                showFeedback(`Preview size updated to ${width}×${height}`, "info");
+            }
+        }
+        
+        // Download popup functionality
+        function openDownloadPopup() {
+            document.getElementById('downloadPopup').style.display = 'flex';
+        }
+        
+        function closeDownloadPopup() {
+            document.getElementById('downloadPopup').style.display = 'none';
+        }
+        
+        // Close popup when clicking outside
+        document.addEventListener('click', function(event) {
+            const popup = document.getElementById('downloadPopup');
+            if (event.target === popup) {
+                closeDownloadPopup();
+            }
+        });
+        
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                closeDownloadPopup();
+            }
+            // Toggle sidebar with Ctrl+B or Cmd+B
+            if ((event.ctrlKey || event.metaKey) && event.key === 'b') {
+                event.preventDefault();
+                toggleSidebar();
+            }
+        });
+        
+        // Sidebar toggle functionality
+        function toggleSidebar() {
+            const container = document.querySelector('.container');
+            const sidebar = document.getElementById('sidebar');
+            const toggleBtn = document.getElementById('sidebarToggle');
+            
+            container.classList.toggle('sidebar-collapsed');
+            sidebar.classList.toggle('collapsed');
+            toggleBtn.classList.toggle('collapsed');
+            
+            // Update button icon
+            if (container.classList.contains('sidebar-collapsed')) {
+                toggleBtn.textContent = '›';
+                toggleBtn.title = 'Show Controls';
+            } else {
+                toggleBtn.textContent = '‹';
+                toggleBtn.title = 'Hide Controls';
+            }
+        }
+        
+        // Accordion functionality
+        function toggleSection(header) {
+            const section = header.parentElement;
+            const content = section.querySelector('.section-content');
+            const toggle = header.querySelector('.section-toggle');
+            
+            // Toggle the expanded state
+            const isExpanded = content.classList.contains('expanded');
+            
+            if (isExpanded) {
+                // Collapse
+                content.classList.remove('expanded');
+                toggle.classList.remove('expanded');
+                header.classList.remove('active');
+                toggle.textContent = '▶';
+            } else {
+                // Expand
+                content.classList.add('expanded');
+                toggle.classList.add('expanded');
+                header.classList.add('active');
+                toggle.textContent = '▼';
+            }
+        }
+        
         // Initialize the UI
         document.addEventListener('DOMContentLoaded', function() {
             renderColorStops();
             updateGradient();
             showFeedback("Welcome! Start by adjusting the colors and positions to create your gradient.", "info");
             
-            // Update step indicators when scrolling
-            window.addEventListener('scroll', updateStepIndicators);
+            // Initialize sidebar toggle button
+            const toggleBtn = document.getElementById('sidebarToggle');
+            toggleBtn.textContent = '‹';
+            toggleBtn.title = 'Hide Controls';
             
             // Add Enter key support for URL input
             document.getElementById('imageUrlInput').addEventListener('keypress', function(e) {
@@ -619,29 +921,6 @@ m.top.appendChild(backgroundImage)</code></pre>
                 }
             });
         });
-        
-        // Update which step is active based on scroll position
-        function updateStepIndicators() {
-            const stepContents = document.querySelectorAll('.step-content');
-            const steps = document.querySelectorAll('.step');
-            
-            let activeIndex = 0;
-            const scrollPosition = window.scrollY + 100;
-            
-            stepContents.forEach((content, index) => {
-                if (scrollPosition >= content.offsetTop) {
-                    activeIndex = index;
-                }
-            });
-            
-            steps.forEach((step, index) => {
-                if (index === activeIndex) {
-                    step.classList.add('active');
-                } else {
-                    step.classList.remove('active');
-                }
-            });
-        }
         
         // Show feedback message
         function showFeedback(message, type = "success") {
@@ -675,9 +954,97 @@ m.top.appendChild(backgroundImage)</code></pre>
             } : null;
         }
         
+        // Parse various color formats
+        function parseColorInput(input) {
+            const trimmed = input.trim();
+            
+            // Try hex format (#FF0000 or FF0000)
+            const hexMatch = /^#?([a-f\d]{6})$/i.exec(trimmed);
+            if (hexMatch) {
+                const hex = '#' + hexMatch[1];
+                const rgb = hexToRgb(hex);
+                return rgb ? { ...rgb, a: 1 } : null;
+            }
+            
+            // Try short hex format (#F00)
+            const shortHexMatch = /^#?([a-f\d])([a-f\d])([a-f\d])$/i.exec(trimmed);
+            if (shortHexMatch) {
+                const hex = '#' + shortHexMatch[1] + shortHexMatch[1] + shortHexMatch[2] + shortHexMatch[2] + shortHexMatch[3] + shortHexMatch[3];
+                const rgb = hexToRgb(hex);
+                return rgb ? { ...rgb, a: 1 } : null;
+            }
+            
+            // Try rgb format (rgb(255, 0, 0))
+            const rgbMatch = /^rgb\s*\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\)$/i.exec(trimmed);
+            if (rgbMatch) {
+                const r = parseInt(rgbMatch[1]);
+                const g = parseInt(rgbMatch[2]);
+                const b = parseInt(rgbMatch[3]);
+                if (r >= 0 && r <= 255 && g >= 0 && g <= 255 && b >= 0 && b <= 255) {
+                    return { r, g, b, a: 1 };
+                }
+            }
+            
+            // Try rgba format (rgba(255, 0, 0, 0.5))
+            const rgbaMatch = /^rgba\s*\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*,\s*([0-1]?\.?\d*)\s*\)$/i.exec(trimmed);
+            if (rgbaMatch) {
+                const r = parseInt(rgbaMatch[1]);
+                const g = parseInt(rgbaMatch[2]);
+                const b = parseInt(rgbaMatch[3]);
+                const a = parseFloat(rgbaMatch[4]);
+                if (r >= 0 && r <= 255 && g >= 0 && g <= 255 && b >= 0 && b <= 255 && a >= 0 && a <= 1) {
+                    return { r, g, b, a };
+                }
+            }
+            
+            return null;
+        }
+        
         // Format RGBA string
         function formatRgba(color) {
             return `rgba(${color.r}, ${color.g}, ${color.b}, ${color.a})`;
+        }
+        
+        // Update range slider visual fill
+        function updateRangeSlider(slider, value, min, max) {
+            if (!slider) return;
+            const percentage = ((value - min) / (max - min)) * 100;
+            slider.style.background = `linear-gradient(to right, #3498db 0%, #3498db ${percentage}%, #dee2e6 ${percentage}%, #dee2e6 100%)`;
+        }
+        
+        // Update color value displays
+        function updateColorValues(index) {
+            const stop = gradientStops[index];
+            const hexColor = rgbToHex(stop.color.r, stop.color.g, stop.color.b);
+            
+            const hexSpan = document.getElementById(`hex-${index}`);
+            const rgbSpan = document.getElementById(`rgb-${index}`);
+            const rgbaSpan = document.getElementById(`rgba-${index}`);
+            const colorInput = document.getElementById(`color-input-${index}`);
+            
+            if (hexSpan) hexSpan.textContent = hexColor.toUpperCase();
+            if (rgbSpan) rgbSpan.textContent = `rgb(${stop.color.r}, ${stop.color.g}, ${stop.color.b})`;
+            if (rgbaSpan) rgbaSpan.textContent = formatRgba(stop.color);
+            
+            // Update text input field with hex value
+            if (colorInput) {
+                colorInput.value = hexColor.toUpperCase();
+            }
+            
+            // Update color picker
+            const colorPicker = document.querySelector(`.color-stop:nth-child(${index + 1}) input[type="color"]`);
+            if (colorPicker) {
+                colorPicker.value = hexColor;
+            }
+            
+            // Update color preview
+            const colorStops = document.querySelectorAll('.color-stop');
+            if (colorStops[index]) {
+                const colorPreview = colorStops[index].querySelector('.color-preview');
+                if (colorPreview) {
+                    colorPreview.style.background = formatRgba(stop.color);
+                }
+            }
         }
         
         // Render all color stops in the UI
@@ -692,20 +1059,29 @@ m.top.appendChild(backgroundImage)</code></pre>
                 stopElement.innerHTML = `
                     <div class="color-preview" style="background: ${formatRgba(stop.color)};"></div>
                     <div class="color-input-group">
-                        <div class="color-input-row">
+                        <div class="color-input-row color-main">
                             <label>Color:</label>
-                            <input type="color" value="${hexColor}" onchange="updateColorFromHex(${index}, this.value)" title="Choose a color">
+                            <input type="color" value="${hexColor}" onchange="updateColorFromHex(${index}, this.value)" title="Choose a color" style="width: 50px; height: 32px;">
+                            <input type="text" id="color-input-${index}" value="${hexColor}" placeholder="Enter hex, rgb, or rgba" onchange="updateColorFromInput(${index}, this.value)" style="flex: 1; font-family: 'Courier New', monospace; font-size: 12px;" title="Type hex (#FF0000), rgb(255,0,0), or rgba(255,0,0,1)">
+                        </div>
+                        <div style="margin: 4px 0; padding: 6px; background: #ffffff; border-radius: 3px; border: 1px solid #e9ecef; font-size: 10px;">
+                            <div style="color: #6c757d; margin-bottom: 3px; font-weight: 500;">Values:</div>
+                            <div style="font-family: 'Courier New', monospace; line-height: 1.3; color: #495057;">
+                                <div style="margin-bottom: 1px;"><strong>HEX:</strong> <span id="hex-${index}">${hexColor.toUpperCase()}</span></div>
+                                <div style="margin-bottom: 1px;"><strong>RGB:</strong> <span id="rgb-${index}">rgb(${stop.color.r}, ${stop.color.g}, ${stop.color.b})</span></div>
+                                <div><strong>RGBA:</strong> <span id="rgba-${index}">${formatRgba(stop.color)}</span></div>
+                            </div>
                         </div>
                         <div class="color-input-row">
                             <label>Position:</label>
                             <input type="number" value="${stop.position}" min="0" max="100" oninput="updateStopPosition(${index}, this.value)" id="position-number-${index}" title="Position in percentage (0-100%)">
-                            <input type="range" value="${stop.position}" min="0" max="100" oninput="updateStopPosition(${index}, this.value)" id="position-range-${index}">
+                            <input type="range" value="${stop.position}" min="0" max="100" oninput="updateStopPosition(${index}, this.value)" id="position-range-${index}" style="background: linear-gradient(to right, #3498db 0%, #3498db ${stop.position}%, #dee2e6 ${stop.position}%, #dee2e6 100%);">
                             <span>%</span>
                         </div>
                         <div class="color-input-row">
                             <label>Opacity:</label>
                             <input type="number" value="${stop.color.a}" min="0" max="1" step="0.1" oninput="updateStopOpacity(${index}, this.value)" id="opacity-number-${index}" title="Opacity value (0-1)">
-                            <input type="range" value="${stop.color.a}" min="0" max="1" step="0.1" oninput="updateStopOpacity(${index}, this.value)" id="opacity-range-${index}">
+                            <input type="range" value="${stop.color.a}" min="0" max="1" step="0.1" oninput="updateStopOpacity(${index}, this.value)" id="opacity-range-${index}" style="background: linear-gradient(to right, #3498db 0%, #3498db ${stop.color.a * 100}%, #dee2e6 ${stop.color.a * 100}%, #dee2e6 100%);">
                         </div>
                     </div>
                     ${index > 0 ? '<button class="remove-stop-btn" onclick="removeColorStop(' + index + ')" title="Remove this color stop">Remove</button>' : ''}
@@ -721,8 +1097,50 @@ m.top.appendChild(backgroundImage)</code></pre>
                 gradientStops[index].color.r = rgb.r;
                 gradientStops[index].color.g = rgb.g;
                 gradientStops[index].color.b = rgb.b;
+                updateColorValues(index);
                 updateGradient();
                 showFeedback("Color updated! Your gradient has been refreshed.", "success");
+            }
+        }
+        
+        // Update color from text input (supports hex, rgb, rgba)
+        function updateColorFromInput(index, inputValue) {
+            const colorInput = document.getElementById(`color-input-${index}`);
+            const parsedColor = parseColorInput(inputValue);
+            
+            if (parsedColor) {
+                gradientStops[index].color.r = parsedColor.r;
+                gradientStops[index].color.g = parsedColor.g;
+                gradientStops[index].color.b = parsedColor.b;
+                gradientStops[index].color.a = parsedColor.a;
+                
+                // Update all inputs and displays
+                updateColorValues(index);
+                updateGradient();
+                
+                // Reset input style to show success
+                colorInput.style.borderColor = '#27ae60';
+                colorInput.style.backgroundColor = '#d4edda';
+                
+                // Reset style after a short delay
+                setTimeout(() => {
+                    colorInput.style.borderColor = '';
+                    colorInput.style.backgroundColor = '';
+                }, 1000);
+                
+                showFeedback("Color updated! Your gradient has been refreshed.", "success");
+            } else {
+                // Show error styling
+                colorInput.style.borderColor = '#e74c3c';
+                colorInput.style.backgroundColor = '#f8d7da';
+                
+                // Reset style after a short delay
+                setTimeout(() => {
+                    colorInput.style.borderColor = '';
+                    colorInput.style.backgroundColor = '';
+                }, 2000);
+                
+                showFeedback("Invalid color format. Try: #FF0000, rgb(255,0,0), or rgba(255,0,0,1)", "info");
             }
         }
         
@@ -737,6 +1155,9 @@ m.top.appendChild(backgroundImage)</code></pre>
             
             if (numberInput) numberInput.value = positionValue;
             if (rangeInput) rangeInput.value = positionValue;
+            
+            // Update range slider fill
+            updateRangeSlider(rangeInput, positionValue, 0, 100);
             
             // Sort stops by position
             gradientStops.sort((a, b) => a.position - b.position);
@@ -763,6 +1184,10 @@ m.top.appendChild(backgroundImage)</code></pre>
             if (numberInput) numberInput.value = opacityValue;
             if (rangeInput) rangeInput.value = opacityValue;
             
+            // Update range slider fill
+            updateRangeSlider(rangeInput, opacityValue, 0, 1);
+            
+            updateColorValues(index);
             updateGradient();
         }
         
@@ -841,9 +1266,25 @@ m.top.appendChild(backgroundImage)</code></pre>
                     document.getElementById('imagePositionControls').style.display = 'grid';
                     document.getElementById('removeImageBtn').disabled = false;
                     
+                    // Expand background image section if it's collapsed
+                    const bgImageSection = document.querySelector('.section:nth-child(3)'); // Background image is 3rd section
+                    const bgImageHeader = bgImageSection.querySelector('.section-header');
+                    const bgImageContent = bgImageSection.querySelector('.section-content');
+                    const bgImageToggle = bgImageHeader.querySelector('.section-toggle');
+                    if (!bgImageContent.classList.contains('expanded')) {
+                        bgImageContent.classList.add('expanded');
+                        bgImageHeader.classList.add('active');
+                        bgImageToggle.classList.add('expanded');
+                        bgImageToggle.textContent = '▼';
+                    }
+                    
                     // Reset offsets when loading a new image
                     document.getElementById('imageOffsetX').value = 0;
                     document.getElementById('imageOffsetY').value = 0;
+                    
+                    // Clear URL input and status since we're using file upload
+                    document.getElementById('imageUrlInput').value = '';
+                    document.getElementById('urlStatus').style.display = 'none';
                     
                     updateBackgroundImage();
                     showFeedback("Background image uploaded successfully!", "success");
@@ -857,9 +1298,10 @@ m.top.appendChild(backgroundImage)</code></pre>
         function loadImageFromUrl() {
             const urlInput = document.getElementById('imageUrlInput');
             const imageUrl = urlInput.value.trim();
+            const urlStatus = document.getElementById('urlStatus');
             
             if (!imageUrl) {
-                showFeedback("Please enter a valid image URL.", "info");
+                showUrlStatus("Please enter a valid image URL.", "error");
                 return;
             }
             
@@ -867,12 +1309,12 @@ m.top.appendChild(backgroundImage)</code></pre>
             try {
                 new URL(imageUrl);
             } catch (e) {
-                showFeedback("Please enter a valid URL format.", "info");
+                showUrlStatus("Please enter a valid URL format.", "error");
                 return;
             }
             
             // Show loading feedback
-            showFeedback("Loading image from URL...", "info");
+            showUrlStatus("Loading image...", "loading");
             
             // Create a new image to test if URL is valid
             const testImage = new Image();
@@ -886,21 +1328,128 @@ m.top.appendChild(backgroundImage)</code></pre>
                 document.getElementById('imagePositionControls').style.display = 'grid';
                 document.getElementById('removeImageBtn').disabled = false;
                 
+                // Expand background image section if it's collapsed
+                const bgImageSection = document.querySelector('.section:nth-child(3)'); // Background image is 3rd section
+                const bgImageHeader = bgImageSection.querySelector('.section-header');
+                const bgImageContent = bgImageSection.querySelector('.section-content');
+                const bgImageToggle = bgImageHeader.querySelector('.section-toggle');
+                if (!bgImageContent.classList.contains('expanded')) {
+                    bgImageContent.classList.add('expanded');
+                    bgImageHeader.classList.add('active');
+                    bgImageToggle.classList.add('expanded');
+                    bgImageToggle.textContent = '▼';
+                }
+                
                 // Reset offsets when loading a new image
                 document.getElementById('imageOffsetX').value = 0;
                 document.getElementById('imageOffsetY').value = 0;
                 
                 updateBackgroundImage();
+                
+                // Show success with truncated URL
+                const truncatedUrl = imageUrl.length > 50 ? imageUrl.substring(0, 47) + '...' : imageUrl;
+                showUrlStatus(`✓ Loaded: ${truncatedUrl}`, "success");
                 showFeedback("Background image loaded successfully from URL!", "success");
             };
             
             testImage.onerror = function() {
+                showUrlStatus("Failed to load image. Check URL and try again.", "error");
                 showFeedback("Failed to load image from URL. Please check the URL and try again.", "info");
             };
             
             // Set crossOrigin to handle CORS if needed
             testImage.crossOrigin = "anonymous";
             testImage.src = imageUrl;
+        }
+        
+        // Show URL status messages
+        function showUrlStatus(message, type) {
+            const urlStatus = document.getElementById('urlStatus');
+            urlStatus.textContent = message;
+            urlStatus.style.display = 'block';
+            
+            // Set colors based on type
+            switch(type) {
+                case 'success':
+                    urlStatus.style.backgroundColor = '#d4edda';
+                    urlStatus.style.color = '#155724';
+                    urlStatus.style.border = '1px solid #c3e6cb';
+                    break;
+                case 'error':
+                    urlStatus.style.backgroundColor = '#f8d7da';
+                    urlStatus.style.color = '#721c24';
+                    urlStatus.style.border = '1px solid #f5c6cb';
+                    break;
+                case 'loading':
+                    urlStatus.style.backgroundColor = '#d1ecf1';
+                    urlStatus.style.color = '#0c5460';
+                    urlStatus.style.border = '1px solid #bee5eb';
+                    break;
+            }
+            
+            // Auto-hide after 5 seconds for success messages
+            if (type === 'success') {
+                setTimeout(() => {
+                    urlStatus.style.display = 'none';
+                }, 5000);
+            }
+        }
+        
+        // Copy gradient CSS code to clipboard
+        function copyGradientCode() {
+            const gradientCode = document.getElementById('gradientCode').textContent;
+            const copyBtn = document.getElementById('copyBtn');
+            const copyFeedback = document.getElementById('copyFeedback');
+            
+            // Use the modern clipboard API
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(gradientCode).then(() => {
+                    showCopySuccess();
+                }).catch(err => {
+                    // Fallback to older method
+                    fallbackCopyTextToClipboard(gradientCode);
+                });
+            } else {
+                // Fallback for older browsers or non-secure contexts
+                fallbackCopyTextToClipboard(gradientCode);
+            }
+            
+            function showCopySuccess() {
+                // Show visual feedback
+                copyFeedback.style.display = 'block';
+                copyBtn.textContent = '✓';
+                copyBtn.style.background = '#27ae60';
+                
+                // Reset button after 2 seconds
+                setTimeout(() => {
+                    copyFeedback.style.display = 'none';
+                    copyBtn.textContent = '📋';
+                    copyBtn.style.background = '#3498db';
+                }, 2000);
+                
+                // Show main feedback
+                showFeedback("Gradient CSS code copied to clipboard!", "success");
+            }
+            
+            function fallbackCopyTextToClipboard(text) {
+                const textArea = document.createElement("textarea");
+                textArea.value = text;
+                textArea.style.position = "fixed";
+                textArea.style.left = "-999999px";
+                textArea.style.top = "-999999px";
+                document.body.appendChild(textArea);
+                textArea.focus();
+                textArea.select();
+                
+                try {
+                    document.execCommand('copy');
+                    showCopySuccess();
+                } catch (err) {
+                    showFeedback("Failed to copy. Please select and copy manually.", "info");
+                }
+                
+                document.body.removeChild(textArea);
+            }
         }
         
         function updateBackgroundImage() {
@@ -1042,6 +1591,9 @@ m.top.appendChild(backgroundImage)</code></pre>
             document.getElementById('backgroundImageUpload').value = '';
             document.getElementById('imageUrlInput').value = '';
             
+            // Clear URL status
+            document.getElementById('urlStatus').style.display = 'none';
+            
             showFeedback("Background image removed.", "info");
         }
         
@@ -1124,6 +1676,7 @@ m.top.appendChild(backgroundImage)</code></pre>
                 URL.revokeObjectURL(url);
                 
                 showFeedback(`Gradient image (${width}×${height}) downloaded successfully!`, "success");
+                closeDownloadPopup();
             }, 'image/png');
         }
         
