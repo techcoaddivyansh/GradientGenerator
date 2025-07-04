@@ -20,11 +20,11 @@
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
         .gradient-preview {
-            width: 100%;
-            height: 300px;
+            width: 758px;
+            height: 315px;
             background: linear-gradient(to right, rgba(4, 3, 73, 1) 28%, rgba(4, 3, 73, 0.6) 65%, rgba(0, 0, 0, 0.4));
             border: 2px solid #ccc;
-            margin: 20px 0;
+            margin: 20px auto;
             border-radius: 5px;
             transition: all 0.3s ease;
         }
@@ -264,6 +264,113 @@
             cursor: help;
             margin-left: 5px;
         }
+        .background-image-controls {
+            margin: 20px 0;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 5px;
+            border: 1px solid #dee2e6;
+        }
+        .image-position-controls {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        .preview-container {
+            position: relative;
+            width: 758px;
+            height: 315px;
+            margin: 20px auto;
+            border-radius: 5px;
+            overflow: hidden;
+            border: 2px solid #ccc;
+        }
+        .background-image {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            z-index: 1;
+        }
+        .gradient-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 2;
+            background: linear-gradient(to right, rgba(4, 3, 73, 1) 28%, rgba(4, 3, 73, 0.6) 65%, rgba(0, 0, 0, 0.4));
+        }
+        .image-upload-btn {
+            background: #6c757d;
+            margin-right: 10px;
+        }
+        .remove-image-btn {
+            background: #dc3545;
+        }
+        .image-controls-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .image-controls-row label {
+            min-width: 120px;
+        }
+        .file-upload-wrapper {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+        }
+        .file-upload-wrapper input[type=file] {
+            position: absolute;
+            left: 0;
+            top: 0;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+        .position-fine-controls {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-top: 15px;
+            padding: 10px;
+            background: #f0f0f0;
+            border-radius: 5px;
+        }
+        .position-fine-controls input[type="number"] {
+            width: 70px;
+        }
+        .position-fine-controls .center-cell {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .position-fine-controls .arrow-btn {
+            width: 40px;
+            height: 40px;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            background: #6c757d;
+            margin: 2px;
+        }
+        .position-fine-controls .arrow-btn:hover {
+            background: #5a6268;
+        }
+        .position-fine-controls .reset-btn {
+            background: #ffc107;
+            color: #212529;
+        }
+        .position-fine-controls .reset-btn:hover {
+            background: #e0a800;
+        }
     </style>
 </head>
 <body>
@@ -321,6 +428,101 @@
         
         <div class="step-content">
             <div class="section-header">
+                <h3>Background Image (Optional)</h3>
+                <div class="tooltip">
+                    <span class="help-icon">?</span>
+                    <span class="tooltiptext">Upload an image to see how your gradient looks as an overlay. You can adjust the position and size of the image.</span>
+                </div>
+            </div>
+            
+            <div class="background-image-controls">
+                <div class="image-controls-row">
+                    <div class="file-upload-wrapper">
+                        <button class="image-upload-btn">Choose Image</button>
+                        <input type="file" id="backgroundImageUpload" accept="image/*" onchange="handleImageUpload(event)">
+                    </div>
+                    <button class="remove-image-btn" onclick="removeBackgroundImage()" id="removeImageBtn" disabled>Remove Image</button>
+                </div>
+                
+                <div class="image-controls-row" style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #dee2e6;">
+                    <label for="imageUrlInput" style="min-width: 80px;">Image URL:</label>
+                    <input type="url" id="imageUrlInput" placeholder="https://example.com/image.jpg" style="flex: 1; margin-right: 10px;">
+                    <button class="image-upload-btn" onclick="loadImageFromUrl()" id="loadUrlBtn">Load from URL</button>
+                </div>
+                
+                <div class="image-position-controls" id="imagePositionControls" style="display: none;">
+                    <div class="control-group">
+                        <label for="imageSize">Image Size:</label>
+                        <select id="imageSize" onchange="updateBackgroundImage()">
+                            <option value="cover">Cover (Fill)</option>
+                            <option value="contain">Contain (Fit)</option>
+                            <option value="100%">Original Size</option>
+                            <option value="150%">150%</option>
+                            <option value="200%">200%</option>
+                            <option value="50%">50%</option>
+                        </select>
+                    </div>
+                    
+                    <div class="control-group">
+                        <label for="imagePosition">Position:</label>
+                        <select id="imagePosition" onchange="updateBackgroundImage()">
+                            <option value="center center">Center</option>
+                            <option value="top left">Top Left</option>
+                            <option value="top center">Top</option>
+                            <option value="top right">Top Right</option>
+                            <option value="center left">Left</option>
+                            <option value="center right">Right</option>
+                            <option value="bottom left">Bottom Left</option>
+                            <option value="bottom center">Bottom</option>
+                            <option value="bottom right">Bottom Right</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="section-header" style="margin-top: 15px; margin-bottom: 5px;">
+                    <h4>Fine Position Adjustment</h4>
+                    <div class="tooltip">
+                        <span class="help-icon">?</span>
+                        <span class="tooltiptext">Adjust the image position by specific pixel values or use the arrow buttons to nudge the image.</span>
+                    </div>
+                </div>
+                
+                <div class="position-fine-controls">
+                    <div></div>
+                    <div class="center-cell">
+                        <button class="arrow-btn" onclick="moveImage(0, -10)" title="Move Up 10px">↑</button>
+                    </div>
+                    <div></div>
+                    
+                    <div class="center-cell">
+                        <button class="arrow-btn" onclick="moveImage(-10, 0)" title="Move Left 10px">←</button>
+                    </div>
+                    <div class="center-cell">
+                        <button class="reset-btn arrow-btn" onclick="resetImagePosition()" title="Reset Position">⟲</button>
+                    </div>
+                    <div class="center-cell">
+                        <button class="arrow-btn" onclick="moveImage(10, 0)" title="Move Right 10px">→</button>
+                    </div>
+                    
+                    <div></div>
+                    <div class="center-cell">
+                        <button class="arrow-btn" onclick="moveImage(0, 10)" title="Move Down 10px">↓</button>
+                    </div>
+                    <div></div>
+                    
+                    <div class="image-controls-row">
+                        <label for="imageOffsetX">X Offset (px):</label>
+                        <input type="number" id="imageOffsetX" value="0" onchange="applyImageOffset()" title="Horizontal offset in pixels">
+                    </div>
+                    <div></div>
+                    <div class="image-controls-row">
+                        <label for="imageOffsetY">Y Offset (px):</label>
+                        <input type="number" id="imageOffsetY" value="0" onchange="applyImageOffset()" title="Vertical offset in pixels">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="section-header">
                 <h3>Gradient Preview</h3>
                 <div class="tooltip">
                     <span class="help-icon">?</span>
@@ -333,7 +535,10 @@
                 <code id="gradientCode">linear-gradient(to right, rgba(4, 3, 73, 1) 28%, rgba(4, 3, 73, 0.6) 65%, rgba(0, 0, 0, 0.4))</code>
             </div>
 
-            <div class="gradient-preview" id="gradientPreview"></div>
+            <div class="preview-container" id="previewContainer">
+                <img id="backgroundImage" class="background-image" style="display: none;">
+                <div class="gradient-overlay" id="gradientPreview"></div>
+            </div>
         </div>
         
         <div class="step-content">
@@ -406,6 +611,13 @@ m.top.appendChild(backgroundImage)</code></pre>
             
             // Update step indicators when scrolling
             window.addEventListener('scroll', updateStepIndicators);
+            
+            // Add Enter key support for URL input
+            document.getElementById('imageUrlInput').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    loadImageFromUrl();
+                }
+            });
         });
         
         // Update which step is active based on scroll position
@@ -612,6 +824,225 @@ m.top.appendChild(backgroundImage)</code></pre>
             
             // Update the code display
             document.getElementById('gradientCode').textContent = gradientCSS;
+        }
+        
+        // Background image handling
+        function handleImageUpload(event) {
+            const file = event.target.files[0];
+            if (file && file.type.match('image.*')) {
+                const reader = new FileReader();
+                
+                reader.onload = function(e) {
+                    const backgroundImage = document.getElementById('backgroundImage');
+                    backgroundImage.src = e.target.result;
+                    backgroundImage.style.display = 'block';
+                    
+                    // Enable image controls
+                    document.getElementById('imagePositionControls').style.display = 'grid';
+                    document.getElementById('removeImageBtn').disabled = false;
+                    
+                    // Reset offsets when loading a new image
+                    document.getElementById('imageOffsetX').value = 0;
+                    document.getElementById('imageOffsetY').value = 0;
+                    
+                    updateBackgroundImage();
+                    showFeedback("Background image uploaded successfully!", "success");
+                };
+                
+                reader.readAsDataURL(file);
+            }
+        }
+        
+        // Load image from URL
+        function loadImageFromUrl() {
+            const urlInput = document.getElementById('imageUrlInput');
+            const imageUrl = urlInput.value.trim();
+            
+            if (!imageUrl) {
+                showFeedback("Please enter a valid image URL.", "info");
+                return;
+            }
+            
+            // Validate URL format
+            try {
+                new URL(imageUrl);
+            } catch (e) {
+                showFeedback("Please enter a valid URL format.", "info");
+                return;
+            }
+            
+            // Show loading feedback
+            showFeedback("Loading image from URL...", "info");
+            
+            // Create a new image to test if URL is valid
+            const testImage = new Image();
+            
+            testImage.onload = function() {
+                const backgroundImage = document.getElementById('backgroundImage');
+                backgroundImage.src = imageUrl;
+                backgroundImage.style.display = 'block';
+                
+                // Enable image controls
+                document.getElementById('imagePositionControls').style.display = 'grid';
+                document.getElementById('removeImageBtn').disabled = false;
+                
+                // Reset offsets when loading a new image
+                document.getElementById('imageOffsetX').value = 0;
+                document.getElementById('imageOffsetY').value = 0;
+                
+                updateBackgroundImage();
+                showFeedback("Background image loaded successfully from URL!", "success");
+            };
+            
+            testImage.onerror = function() {
+                showFeedback("Failed to load image from URL. Please check the URL and try again.", "info");
+            };
+            
+            // Set crossOrigin to handle CORS if needed
+            testImage.crossOrigin = "anonymous";
+            testImage.src = imageUrl;
+        }
+        
+        function updateBackgroundImage() {
+            const backgroundImage = document.getElementById('backgroundImage');
+            const size = document.getElementById('imageSize').value;
+            const position = document.getElementById('imagePosition').value;
+            
+            backgroundImage.style.objectFit = size === 'cover' || size === 'contain' ? size : 'none';
+            
+            if (size !== 'cover' && size !== 'contain') {
+                backgroundImage.style.width = size;
+                backgroundImage.style.height = 'auto';
+            } else {
+                backgroundImage.style.width = '100%';
+                backgroundImage.style.height = '100%';
+            }
+            
+            const [vertical, horizontal] = position.split(' ');
+            backgroundImage.style.objectPosition = position;
+            
+            // Calculate position if not using object-fit
+            if (size !== 'cover' && size !== 'contain') {
+                let top = '50%', left = '50%';
+                
+                if (vertical === 'top') top = '0';
+                else if (vertical === 'bottom') top = '100%';
+                
+                if (horizontal === 'left') left = '0';
+                else if (horizontal === 'right') left = '100%';
+                
+                backgroundImage.style.top = top;
+                backgroundImage.style.left = left;
+                backgroundImage.style.transform = 'translate(-50%, -50%)';
+                
+                // Adjust transform origin based on position
+                if (vertical === 'top') backgroundImage.style.transformOrigin = `top ${horizontal}`;
+                else if (vertical === 'bottom') backgroundImage.style.transformOrigin = `bottom ${horizontal}`;
+                else backgroundImage.style.transformOrigin = `center ${horizontal}`;
+            }
+            
+            // Apply any custom offsets
+            applyImageOffset();
+        }
+        
+        function moveImage(deltaX, deltaY) {
+            const xOffset = parseInt(document.getElementById('imageOffsetX').value || 0);
+            const yOffset = parseInt(document.getElementById('imageOffsetY').value || 0);
+            
+            document.getElementById('imageOffsetX').value = xOffset + deltaX;
+            document.getElementById('imageOffsetY').value = yOffset + deltaY;
+            
+            applyImageOffset();
+        }
+        
+        function applyImageOffset() {
+            const backgroundImage = document.getElementById('backgroundImage');
+            const xOffset = parseInt(document.getElementById('imageOffsetX').value || 0);
+            const yOffset = parseInt(document.getElementById('imageOffsetY').value || 0);
+            
+            // Get the size setting
+            const size = document.getElementById('imageSize').value;
+            
+            // Different handling based on object-fit mode
+            if (size === 'cover' || size === 'contain') {
+                // For object-fit modes, we need to parse the current position
+                let baseX = '50%';
+                let baseY = '50%';
+                
+                // Get the base position from the dropdown
+                const positionSetting = document.getElementById('imagePosition').value;
+                const [vertical, horizontal] = positionSetting.split(' ');
+                
+                // Convert position keywords to percentages
+                if (horizontal === 'left') baseX = '0%';
+                else if (horizontal === 'right') baseX = '100%';
+                else baseX = '50%';
+                
+                if (vertical === 'top') baseY = '0%';
+                else if (vertical === 'bottom') baseY = '100%';
+                else baseY = '50%';
+                
+                // Apply the pixel offsets directly to object-position
+                backgroundImage.style.objectPosition = `calc(${baseX} + ${xOffset}px) calc(${baseY} + ${yOffset}px)`;
+            } else {
+                // For non-object-fit images
+                // First determine the base position
+                const positionSetting = document.getElementById('imagePosition').value;
+                const [vertical, horizontal] = positionSetting.split(' ');
+                
+                let baseX = '50%';
+                let baseY = '50%';
+                let translateX = '-50%';
+                let translateY = '-50%';
+                
+                // Set base position
+                if (horizontal === 'left') {
+                    baseX = '0%';
+                    translateX = '0%';
+                } else if (horizontal === 'right') {
+                    baseX = '100%';
+                    translateX = '-100%';
+                }
+                
+                if (vertical === 'top') {
+                    baseY = '0%';
+                    translateY = '0%';
+                } else if (vertical === 'bottom') {
+                    baseY = '100%';
+                    translateY = '-100%';
+                }
+                
+                // Apply position with offsets
+                backgroundImage.style.top = baseY;
+                backgroundImage.style.left = baseX;
+                backgroundImage.style.transform = `translate(calc(${translateX} + ${xOffset}px), calc(${translateY} + ${yOffset}px))`;
+            }
+            
+            // Log the current position for debugging
+            console.log(`Image position: x=${xOffset}px, y=${yOffset}px, objectFit=${backgroundImage.style.objectFit}, objectPosition=${backgroundImage.style.objectPosition}`);
+        }
+        
+        function resetImagePosition() {
+            document.getElementById('imageOffsetX').value = 0;
+            document.getElementById('imageOffsetY').value = 0;
+            updateBackgroundImage();
+            showFeedback("Image position reset to default.", "info");
+        }
+        
+        function removeBackgroundImage() {
+            const backgroundImage = document.getElementById('backgroundImage');
+            backgroundImage.src = '';
+            backgroundImage.style.display = 'none';
+            
+            // Disable image controls
+            document.getElementById('imagePositionControls').style.display = 'none';
+            document.getElementById('removeImageBtn').disabled = true;
+            
+            // Reset file input and URL input
+            document.getElementById('backgroundImageUpload').value = '';
+            document.getElementById('imageUrlInput').value = '';
+            
+            showFeedback("Background image removed.", "info");
         }
         
         function createGradientCanvas(width, height) {
