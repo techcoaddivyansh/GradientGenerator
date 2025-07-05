@@ -402,6 +402,11 @@
             font-size: 13px;
             animation: fadeIn 0.5s;
             max-width: 300px;
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            z-index: 1001;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
         }
         .success-message {
             background-color: #d4edda;
@@ -568,9 +573,11 @@
             </div>
             <div style="display: flex; align-items: center; gap: 15px;">
                 <button onclick="openDownloadPopup()" style="background: #27ae60; color: white; border: none; padding: 10px 20px; border-radius: 6px; font-size: 14px; cursor: pointer; transition: all 0.2s ease;" onmouseover="this.style.background='#229954'" onmouseout="this.style.background='#27ae60'">📥 Download</button>
-                <div id="feedback" class="feedback-message"></div>
             </div>
         </div>
+        
+        <!-- Toast notification positioned absolutely -->
+        <div id="feedback" class="feedback-message"></div>
         
         <button onclick="toggleSidebar()" id="sidebarToggle" class="sidebar-toggle">‹</button>
         <div class="sidebar" id="sidebar">
@@ -621,6 +628,25 @@
                 </div>
             </div>
             
+            <div class="section">
+                <div class="section-header active" onclick="toggleSection(this)">
+                    <h3>Import Gradient</h3>
+                    <span class="section-toggle expanded">▼</span>
+                </div>
+                <div class="section-content expanded">
+                    <div class="control-group">
+                        <label for="gradientImport">Paste CSS Gradient:</label>
+                        <textarea id="gradientImport" placeholder="linear-gradient(to right, rgba(34, 29, 16, 1) 7%, rgba(31, 26, 15, 1) 20%, rgba(30, 25, 15, 0.8) 50%)" 
+                                  style="width: 100%; height: 80px; padding: 8px; border: 1px solid #bdc3c7; border-radius: 6px; font-family: 'Courier New', monospace; font-size: 11px; resize: vertical;"></textarea>
+                    </div>
+                    <div style="display: flex; gap: 8px; margin-top: 8px;">
+                        <button onclick="importGradient()" style="background: #f39c12; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500; transition: all 0.2s ease; flex: 1;" onmouseover="this.style.background='#e67e22'" onmouseout="this.style.background='#f39c12'">📥 Import Gradient</button>
+                        <button onclick="loadExampleGradient()" style="background: #6c757d; color: white; padding: 8px 12px; border: none; border-radius: 6px; font-size: 12px; cursor: pointer; transition: all 0.2s ease;" title="Load example gradient" onmouseover="this.style.background='#5a6268'" onmouseout="this.style.background='#6c757d'">📋 Example</button>
+                    </div>
+                    <div id="importStatus" style="margin-top: 8px; padding: 6px 8px; border-radius: 4px; font-size: 11px; display: none;"></div>
+                </div>
+            </div>
+
             <div class="section">
                 <div class="section-header active" onclick="toggleSection(this)">
                     <h3>Color Stops</h3>
@@ -778,11 +804,12 @@
     </div>
 
     <script>
-        // Default gradient stops
+        // Default gradient stops with unique IDs
+        let nextStopId = 4;
         const gradientStops = [
-            { color: { r: 4, g: 3, b: 73, a: 1 }, position: 28 },
-            { color: { r: 4, g: 3, b: 73, a: 0.6 }, position: 65 },
-            { color: { r: 0, g: 0, b: 0, a: 0.4 }, position: 100 }
+            { id: 1, color: { r: 4, g: 3, b: 73, a: 1 }, position: 28 },
+            { id: 2, color: { r: 4, g: 3, b: 73, a: 0.6 }, position: 65 },
+            { id: 3, color: { r: 0, g: 0, b: 0, a: 0.4 }, position: 100 }
         ];
         
         // Preview size functionality
@@ -920,6 +947,14 @@
                     loadImageFromUrl();
                 }
             });
+            
+            // Add keyboard support for gradient import
+            document.getElementById('gradientImport').addEventListener('keydown', function(e) {
+                if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                    e.preventDefault();
+                    importGradient();
+                }
+            });
         });
         
         // Show feedback message
@@ -1005,6 +1040,247 @@
             return `rgba(${color.r}, ${color.g}, ${color.b}, ${color.a})`;
         }
         
+        // Parse CSS gradient string
+        function parseGradient(gradientString) {
+            try {
+                // Clean up the string
+                const cleaned = gradientString.trim().replace(/\s+/g, ' ');
+                
+                // Extract the linear-gradient content
+                const match = cleaned.match(/linear-gradient\s*\(\s*(.*)\s*\)/i);
+                if (!match) {
+                    throw new Error('Not a valid linear-gradient');
+                }
+                
+                const content = match[1];
+                const parts = [];
+                let currentPart = '';
+                let parenDepth = 0;
+                let inQuotes = false;
+                
+                // Split by commas, respecting parentheses and quotes
+                for (let i = 0; i < content.length; i++) {
+                    const char = content[i];
+                    if (char === '"' || char === "'") {
+                        inQuotes = !inQuotes;
+                    } else if (!inQuotes) {
+                        if (char === '(') parenDepth++;
+                        else if (char === ')') parenDepth--;
+                        else if (char === ',' && parenDepth === 0) {
+                            parts.push(currentPart.trim());
+                            currentPart = '';
+                            continue;
+                        }
+                    }
+                    currentPart += char;
+                }
+                if (currentPart.trim()) {
+                    parts.push(currentPart.trim());
+                }
+                
+                // First part might be direction
+                let direction = 'to right';
+                let colorStopsStart = 0;
+                
+                const firstPart = parts[0].toLowerCase();
+                if (firstPart.includes('to ') || firstPart.includes('deg') || firstPart.includes('rad') || firstPart.includes('turn')) {
+                    direction = firstPart;
+                    colorStopsStart = 1;
+                }
+                
+                // Parse color stops
+                const parsedStops = [];
+                for (let i = colorStopsStart; i < parts.length; i++) {
+                    const stopString = parts[i].trim();
+                    const colorStop = parseColorStop(stopString);
+                    if (colorStop) {
+                        parsedStops.push(colorStop);
+                    }
+                }
+                
+                return {
+                    direction: direction,
+                    stops: parsedStops
+                };
+                
+            } catch (error) {
+                console.error('Gradient parsing error:', error);
+                throw error;
+            }
+        }
+        
+        // Parse individual color stop
+        function parseColorStop(stopString) {
+            // Handle various formats: "rgba(255,0,0,1) 50%" or "#ff0000 25%" or "red 10%"
+            
+            // Try to extract position (percentage)
+            let position = 100; // default
+            const positionMatch = stopString.match(/(\d+(?:\.\d+)?)\s*%\s*$/);
+            if (positionMatch) {
+                position = parseFloat(positionMatch[1]);
+                stopString = stopString.replace(/\s*\d+(?:\.\d+)?\s*%\s*$/, '').trim();
+            }
+            
+            // Parse color part
+            let color = null;
+            
+            // Try rgba/rgb format
+            const rgbaMatch = stopString.match(/rgba?\s*\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*(?:,\s*([0-1]?\.?\d*))?\s*\)/i);
+            if (rgbaMatch) {
+                color = {
+                    r: parseInt(rgbaMatch[1]),
+                    g: parseInt(rgbaMatch[2]),
+                    b: parseInt(rgbaMatch[3]),
+                    a: rgbaMatch[4] ? parseFloat(rgbaMatch[4]) : 1
+                };
+            }
+            
+            // Try hex format
+            if (!color) {
+                const hexMatch = stopString.match(/#([a-f\d]{6}|[a-f\d]{3})/i);
+                if (hexMatch) {
+                    let hex = hexMatch[1];
+                    if (hex.length === 3) {
+                        hex = hex[0] + hex[0] + hex[1] + hex[1] + hex[2] + hex[2];
+                    }
+                    const rgb = hexToRgb('#' + hex);
+                    if (rgb) {
+                        color = { ...rgb, a: 1 };
+                    }
+                }
+            }
+            
+            // Try named colors (basic set)
+            if (!color) {
+                const namedColors = {
+                    'red': { r: 255, g: 0, b: 0, a: 1 },
+                    'green': { r: 0, g: 128, b: 0, a: 1 },
+                    'blue': { r: 0, g: 0, b: 255, a: 1 },
+                    'white': { r: 255, g: 255, b: 255, a: 1 },
+                    'black': { r: 0, g: 0, b: 0, a: 1 },
+                    'transparent': { r: 0, g: 0, b: 0, a: 0 }
+                };
+                const colorName = stopString.toLowerCase().trim();
+                if (namedColors[colorName]) {
+                    color = namedColors[colorName];
+                }
+            }
+            
+            if (!color) {
+                console.warn('Could not parse color:', stopString);
+                return null;
+            }
+            
+            return { color, position };
+        }
+        
+        // Show import status messages
+        function showImportStatus(message, type) {
+            const importStatus = document.getElementById('importStatus');
+            importStatus.textContent = message;
+            importStatus.style.display = 'block';
+            
+            // Set colors based on type
+            switch(type) {
+                case 'success':
+                    importStatus.style.backgroundColor = '#d4edda';
+                    importStatus.style.color = '#155724';
+                    importStatus.style.border = '1px solid #c3e6cb';
+                    break;
+                case 'error':
+                    importStatus.style.backgroundColor = '#f8d7da';
+                    importStatus.style.color = '#721c24';
+                    importStatus.style.border = '1px solid #f5c6cb';
+                    break;
+                case 'info':
+                    importStatus.style.backgroundColor = '#d1ecf1';
+                    importStatus.style.color = '#0c5460';
+                    importStatus.style.border = '1px solid #bee5eb';
+                    break;
+            }
+            
+            // Auto-hide after 5 seconds for success messages
+            if (type === 'success') {
+                setTimeout(() => {
+                    importStatus.style.display = 'none';
+                }, 5000);
+            }
+        }
+        
+        // Import gradient from CSS string
+        function importGradient() {
+            const gradientInput = document.getElementById('gradientImport');
+            const gradientString = gradientInput.value.trim();
+            
+            if (!gradientString) {
+                showImportStatus("Please paste a CSS gradient string.", "error");
+                return;
+            }
+            
+            try {
+                const parsed = parseGradient(gradientString);
+                
+                if (parsed.stops.length < 2) {
+                    showImportStatus("Gradient must have at least 2 color stops.", "error");
+                    return;
+                }
+                
+                // Clear existing stops
+                gradientStops.length = 0;
+                nextStopId = 1;
+                
+                // Add parsed stops
+                parsed.stops.forEach(stop => {
+                    gradientStops.push({
+                        id: nextStopId++,
+                        color: stop.color,
+                        position: stop.position
+                    });
+                });
+                
+                // Set direction
+                const directionSelect = document.getElementById('gradientDirection');
+                const directionMap = {
+                    'to right': 'to right',
+                    'to left': 'to left',
+                    'to bottom': 'to bottom',
+                    'to top': 'to top',
+                    'to bottom right': 'to bottom right',
+                    'to bottom left': 'to bottom left',
+                    'to top right': 'to top right',
+                    'to top left': 'to top left'
+                };
+                
+                if (directionMap[parsed.direction]) {
+                    directionSelect.value = directionMap[parsed.direction];
+                } else {
+                    directionSelect.value = 'to right'; // fallback
+                }
+                
+                // Update UI
+                renderColorStops();
+                updateGradient();
+                
+                showImportStatus(`✓ Imported gradient with ${parsed.stops.length} color stops!`, "success");
+                showFeedback("Gradient imported successfully! All color stops have been updated.", "success");
+                
+                // Clear the input
+                gradientInput.value = '';
+                
+            } catch (error) {
+                showImportStatus("Failed to parse gradient. Please check the format.", "error");
+                                 console.error('Import error:', error);
+             }
+         }
+         
+         // Load example gradient
+         function loadExampleGradient() {
+             const exampleGradient = 'linear-gradient(to right, rgba(34, 29, 16, 1) 7%, rgba(31, 26, 15, 1) 20%, rgba(30, 25, 15, 0.8) 50%, rgba(29, 24, 14, 0.4) 68%, rgba(29, 24, 14, 0.2) 100%)';
+             
+             document.getElementById('gradientImport').value = exampleGradient;
+             importGradient();
+         }
+        
         // Update range slider visual fill
         function updateRangeSlider(slider, value, min, max) {
             if (!slider) return;
@@ -1012,15 +1288,27 @@
             slider.style.background = `linear-gradient(to right, #3498db 0%, #3498db ${percentage}%, #dee2e6 ${percentage}%, #dee2e6 100%)`;
         }
         
+        // Find stop by ID
+        function findStopById(id) {
+            return gradientStops.find(stop => stop.id === id);
+        }
+        
+        // Find stop index by ID
+        function findStopIndexById(id) {
+            return gradientStops.findIndex(stop => stop.id === id);
+        }
+        
         // Update color value displays
-        function updateColorValues(index) {
-            const stop = gradientStops[index];
+        function updateColorValues(stopId) {
+            const stop = findStopById(stopId);
+            if (!stop) return;
+            
             const hexColor = rgbToHex(stop.color.r, stop.color.g, stop.color.b);
             
-            const hexSpan = document.getElementById(`hex-${index}`);
-            const rgbSpan = document.getElementById(`rgb-${index}`);
-            const rgbaSpan = document.getElementById(`rgba-${index}`);
-            const colorInput = document.getElementById(`color-input-${index}`);
+            const hexSpan = document.getElementById(`hex-${stopId}`);
+            const rgbSpan = document.getElementById(`rgb-${stopId}`);
+            const rgbaSpan = document.getElementById(`rgba-${stopId}`);
+            const colorInput = document.getElementById(`color-input-${stopId}`);
             
             if (hexSpan) hexSpan.textContent = hexColor.toUpperCase();
             if (rgbSpan) rgbSpan.textContent = `rgb(${stop.color.r}, ${stop.color.g}, ${stop.color.b})`;
@@ -1032,90 +1320,100 @@
             }
             
             // Update color picker
-            const colorPicker = document.querySelector(`.color-stop:nth-child(${index + 1}) input[type="color"]`);
+            const colorPicker = document.querySelector(`[data-stop-id="${stopId}"] input[type="color"]`);
             if (colorPicker) {
                 colorPicker.value = hexColor;
             }
             
             // Update color preview
-            const colorStops = document.querySelectorAll('.color-stop');
-            if (colorStops[index]) {
-                const colorPreview = colorStops[index].querySelector('.color-preview');
-                if (colorPreview) {
-                    colorPreview.style.background = formatRgba(stop.color);
-                }
+            const colorPreview = document.querySelector(`[data-stop-id="${stopId}"] .color-preview`);
+            if (colorPreview) {
+                colorPreview.style.background = formatRgba(stop.color);
             }
         }
         
         // Render all color stops in the UI
         function renderColorStops() {
             const container = document.getElementById('colorStopsContainer');
+            
+            // Preserve scroll position
+            const scrollTop = container.scrollTop;
+            
             container.innerHTML = '';
             
-            gradientStops.forEach((stop, index) => {
+            // Sort stops by position for display, but maintain original array order
+            const sortedStops = [...gradientStops].sort((a, b) => a.position - b.position);
+            
+            sortedStops.forEach((stop, displayIndex) => {
                 const hexColor = rgbToHex(stop.color.r, stop.color.g, stop.color.b);
                 const stopElement = document.createElement('div');
                 stopElement.className = 'color-stop';
+                stopElement.setAttribute('data-stop-id', stop.id);
                 stopElement.innerHTML = `
                     <div class="color-preview" style="background: ${formatRgba(stop.color)};"></div>
                     <div class="color-input-group">
                         <div class="color-input-row color-main">
                             <label>Color:</label>
-                            <input type="color" value="${hexColor}" onchange="updateColorFromHex(${index}, this.value)" title="Choose a color" style="width: 50px; height: 32px;">
-                            <input type="text" id="color-input-${index}" value="${hexColor}" placeholder="Enter hex, rgb, or rgba" onchange="updateColorFromInput(${index}, this.value)" style="flex: 1; font-family: 'Courier New', monospace; font-size: 12px;" title="Type hex (#FF0000), rgb(255,0,0), or rgba(255,0,0,1)">
+                            <input type="color" value="${hexColor}" onchange="updateColorFromHex(${stop.id}, this.value)" title="Choose a color" style="width: 50px; height: 32px;">
+                            <input type="text" id="color-input-${stop.id}" value="${hexColor}" placeholder="Enter hex, rgb, or rgba" onchange="updateColorFromInput(${stop.id}, this.value)" style="flex: 1; font-family: 'Courier New', monospace; font-size: 12px;" title="Type hex (#FF0000), rgb(255,0,0), or rgba(255,0,0,1)">
                         </div>
                         <div style="margin: 4px 0; padding: 6px; background: #ffffff; border-radius: 3px; border: 1px solid #e9ecef; font-size: 10px;">
                             <div style="color: #6c757d; margin-bottom: 3px; font-weight: 500;">Values:</div>
                             <div style="font-family: 'Courier New', monospace; line-height: 1.3; color: #495057;">
-                                <div style="margin-bottom: 1px;"><strong>HEX:</strong> <span id="hex-${index}">${hexColor.toUpperCase()}</span></div>
-                                <div style="margin-bottom: 1px;"><strong>RGB:</strong> <span id="rgb-${index}">rgb(${stop.color.r}, ${stop.color.g}, ${stop.color.b})</span></div>
-                                <div><strong>RGBA:</strong> <span id="rgba-${index}">${formatRgba(stop.color)}</span></div>
+                                <div style="margin-bottom: 1px;"><strong>HEX:</strong> <span id="hex-${stop.id}">${hexColor.toUpperCase()}</span></div>
+                                <div style="margin-bottom: 1px;"><strong>RGB:</strong> <span id="rgb-${stop.id}">rgb(${stop.color.r}, ${stop.color.g}, ${stop.color.b})</span></div>
+                                <div><strong>RGBA:</strong> <span id="rgba-${stop.id}">${formatRgba(stop.color)}</span></div>
                             </div>
                         </div>
                         <div class="color-input-row">
                             <label>Position:</label>
-                            <input type="number" value="${stop.position}" min="0" max="100" oninput="updateStopPosition(${index}, this.value)" id="position-number-${index}" title="Position in percentage (0-100%)">
-                            <input type="range" value="${stop.position}" min="0" max="100" oninput="updateStopPosition(${index}, this.value)" id="position-range-${index}" style="background: linear-gradient(to right, #3498db 0%, #3498db ${stop.position}%, #dee2e6 ${stop.position}%, #dee2e6 100%);">
+                            <input type="number" value="${stop.position}" min="0" max="100" oninput="updateStopPosition(${stop.id}, this.value)" id="position-number-${stop.id}" title="Position in percentage (0-100%)">
+                            <input type="range" value="${stop.position}" min="0" max="100" oninput="updateStopPosition(${stop.id}, this.value)" id="position-range-${stop.id}" style="background: linear-gradient(to right, #3498db 0%, #3498db ${stop.position}%, #dee2e6 ${stop.position}%, #dee2e6 100%);">
                             <span>%</span>
                         </div>
                         <div class="color-input-row">
                             <label>Opacity:</label>
-                            <input type="number" value="${stop.color.a}" min="0" max="1" step="0.1" oninput="updateStopOpacity(${index}, this.value)" id="opacity-number-${index}" title="Opacity value (0-1)">
-                            <input type="range" value="${stop.color.a}" min="0" max="1" step="0.1" oninput="updateStopOpacity(${index}, this.value)" id="opacity-range-${index}" style="background: linear-gradient(to right, #3498db 0%, #3498db ${stop.color.a * 100}%, #dee2e6 ${stop.color.a * 100}%, #dee2e6 100%);">
+                            <input type="number" value="${stop.color.a}" min="0" max="1" step="0.1" oninput="updateStopOpacity(${stop.id}, this.value)" id="opacity-number-${stop.id}" title="Opacity value (0-1)">
+                            <input type="range" value="${stop.color.a}" min="0" max="1" step="0.1" oninput="updateStopOpacity(${stop.id}, this.value)" id="opacity-range-${stop.id}" style="background: linear-gradient(to right, #3498db 0%, #3498db ${stop.color.a * 100}%, #dee2e6 ${stop.color.a * 100}%, #dee2e6 100%);">
                         </div>
                     </div>
-                    ${index > 0 ? '<button class="remove-stop-btn" onclick="removeColorStop(' + index + ')" title="Remove this color stop">Remove</button>' : ''}
+                    ${gradientStops.length > 2 ? '<button class="remove-stop-btn" onclick="removeColorStop(' + stop.id + ')" title="Remove this color stop">Remove</button>' : ''}
                 `;
                 container.appendChild(stopElement);
             });
+            
+            // Restore scroll position
+            container.scrollTop = scrollTop;
         }
         
         // Update color from hex input
-        function updateColorFromHex(index, hexValue) {
+        function updateColorFromHex(stopId, hexValue) {
+            const stop = findStopById(stopId);
             const rgb = hexToRgb(hexValue);
-            if (rgb) {
-                gradientStops[index].color.r = rgb.r;
-                gradientStops[index].color.g = rgb.g;
-                gradientStops[index].color.b = rgb.b;
-                updateColorValues(index);
+            if (rgb && stop) {
+                stop.color.r = rgb.r;
+                stop.color.g = rgb.g;
+                stop.color.b = rgb.b;
+                updateColorValues(stopId);
                 updateGradient();
                 showFeedback("Color updated! Your gradient has been refreshed.", "success");
             }
         }
         
         // Update color from text input (supports hex, rgb, rgba)
-        function updateColorFromInput(index, inputValue) {
-            const colorInput = document.getElementById(`color-input-${index}`);
+        function updateColorFromInput(stopId, inputValue) {
+            const colorInput = document.getElementById(`color-input-${stopId}`);
             const parsedColor = parseColorInput(inputValue);
+            const stop = findStopById(stopId);
             
-            if (parsedColor) {
-                gradientStops[index].color.r = parsedColor.r;
-                gradientStops[index].color.g = parsedColor.g;
-                gradientStops[index].color.b = parsedColor.b;
-                gradientStops[index].color.a = parsedColor.a;
+            if (parsedColor && stop) {
+                stop.color.r = parsedColor.r;
+                stop.color.g = parsedColor.g;
+                stop.color.b = parsedColor.b;
+                stop.color.a = parsedColor.a;
                 
                 // Update all inputs and displays
-                updateColorValues(index);
+                updateColorValues(stopId);
                 updateGradient();
                 
                 // Reset input style to show success
@@ -1145,13 +1443,17 @@
         }
         
         // Update stop position
-        function updateStopPosition(index, value) {
+        function updateStopPosition(stopId, value) {
             const positionValue = parseInt(value);
-            gradientStops[index].position = positionValue;
+            const stop = findStopById(stopId);
+            
+            if (!stop) return;
+            
+            stop.position = positionValue;
             
             // Update the specific inputs that triggered this change
-            const numberInput = document.getElementById(`position-number-${index}`);
-            const rangeInput = document.getElementById(`position-range-${index}`);
+            const numberInput = document.getElementById(`position-number-${stopId}`);
+            const rangeInput = document.getElementById(`position-range-${stopId}`);
             
             if (numberInput) numberInput.value = positionValue;
             if (rangeInput) rangeInput.value = positionValue;
@@ -1159,27 +1461,24 @@
             // Update range slider fill
             updateRangeSlider(rangeInput, positionValue, 0, 100);
             
-            // Sort stops by position
-            gradientStops.sort((a, b) => a.position - b.position);
-            
-            // If the order changed, re-render
-            const newIndex = gradientStops.findIndex(stop => stop.position === positionValue);
-            if (newIndex !== index) {
-                renderColorStops();
-                showFeedback("Color stops reordered based on position values.", "info");
-            }
+            // Re-render to show stops in correct order (now efficient with scroll preservation)
+            renderColorStops();
             
             updateGradient();
         }
         
         // Update stop opacity
-        function updateStopOpacity(index, value) {
+        function updateStopOpacity(stopId, value) {
             const opacityValue = parseFloat(value);
-            gradientStops[index].color.a = opacityValue;
+            const stop = findStopById(stopId);
+            
+            if (!stop) return;
+            
+            stop.color.a = opacityValue;
             
             // Sync the range and number inputs
-            const numberInput = document.getElementById(`opacity-number-${index}`);
-            const rangeInput = document.getElementById(`opacity-range-${index}`);
+            const numberInput = document.getElementById(`opacity-number-${stopId}`);
+            const rangeInput = document.getElementById(`opacity-range-${stopId}`);
             
             if (numberInput) numberInput.value = opacityValue;
             if (rangeInput) rangeInput.value = opacityValue;
@@ -1187,43 +1486,40 @@
             // Update range slider fill
             updateRangeSlider(rangeInput, opacityValue, 0, 1);
             
-            updateColorValues(index);
+            updateColorValues(stopId);
             updateGradient();
         }
         
         // Add a new color stop
         function addColorStop() {
-            // Find a position between the last two stops or add at the end
-            let newPosition = 50;
-            if (gradientStops.length >= 2) {
-                const lastPos = gradientStops[gradientStops.length - 1].position;
-                const secondLastPos = gradientStops[gradientStops.length - 2].position;
-                newPosition = Math.min(100, Math.floor((lastPos + secondLastPos) / 2));
-            }
+            // Always add new color stops at the end (100% position)
+            const newPosition = 100;
             
-            // Use the color of the last stop as a starting point
-            const lastColor = gradientStops[gradientStops.length - 1].color;
+            // Use white color with full opacity as default
+            const defaultColor = { r: 255, g: 255, b: 255, a: 1 };
             
             gradientStops.push({
-                color: { r: lastColor.r, g: lastColor.g, b: lastColor.b, a: lastColor.a },
+                id: nextStopId++,
+                color: defaultColor,
                 position: newPosition
             });
             
-            // Sort stops by position
-            gradientStops.sort((a, b) => a.position - b.position);
             renderColorStops();
             updateGradient();
             
-            showFeedback("New color stop added! Customize it to enhance your gradient.", "success");
+            showFeedback("New white color stop added at 100%! Customize it to enhance your gradient.", "success");
         }
         
         // Remove a color stop
-        function removeColorStop(index) {
+        function removeColorStop(stopId) {
             if (gradientStops.length > 2) {
-                gradientStops.splice(index, 1);
-                renderColorStops();
-                updateGradient();
-                showFeedback("Color stop removed. Your gradient has been updated.", "info");
+                const index = findStopIndexById(stopId);
+                if (index !== -1) {
+                    gradientStops.splice(index, 1);
+                    renderColorStops();
+                    updateGradient();
+                    showFeedback("Color stop removed. Your gradient has been updated.", "info");
+                }
             } else {
                 showFeedback("You need at least 2 color stops for a gradient. Cannot remove.", "info");
             }
