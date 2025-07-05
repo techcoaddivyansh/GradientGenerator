@@ -113,7 +113,7 @@
         .gradient-preview {
             width: 758px;
             height: 315px;
-            background: linear-gradient(to right, rgba(4, 3, 73, 1) 28%, rgba(4, 3, 73, 0.6) 65%, rgba(0, 0, 0, 0.4));
+            background: linear-gradient(to right, rgba(4, 3, 73, 1) 0%, rgba(0, 0, 0, 0.4) 100%);
             border: 2px solid #bdc3c7;
             border-radius: 8px;
             transition: all 0.3s ease;
@@ -481,7 +481,7 @@
             width: 100%;
             height: 100%;
             z-index: 2;
-            background: linear-gradient(to right, rgba(4, 3, 73, 1) 28%, rgba(4, 3, 73, 0.6) 65%, rgba(0, 0, 0, 0.4));
+            background: linear-gradient(to right, rgba(4, 3, 73, 1) 0%, rgba(0, 0, 0, 0.4) 100%);
         }
         .image-upload-btn {
             background: #6c757d;
@@ -750,6 +750,42 @@
                     </div>
                 </div>
             </div>
+
+            <div class="section">
+                <div class="section-header" onclick="toggleSection(this)">
+                    <h3>How to Use</h3>
+                    <span class="section-toggle">▶</span>
+                </div>
+                <div class="section-content">
+                    <div style="font-size: 12px; line-height: 1.5;">
+                        <h4 style="margin: 0 0 8px 0; font-size: 14px; color: #2c3e50;">Quick Guide:</h4>
+                        <ol style="padding-left: 20px; margin-top: 0;">
+                            <li><strong>Create Gradient:</strong> Adjust color stops and positions to create your gradient.</li>
+                            <li><strong>Add Background:</strong> Optionally add and position a background image.</li>
+                            <li><strong>Customize Size:</strong> Set your preferred preview dimensions.</li>
+                            <li><strong>Export:</strong> Copy the CSS code or download as an image.</li>
+                        </ol>
+                        
+                        <h4 style="margin: 12px 0 8px 0; font-size: 14px; color: #2c3e50;">Tips:</h4>
+                        <ul style="padding-left: 20px; margin-top: 0;">
+                            <li>Use <strong>+ Add Color Stop</strong> to create more complex gradients.</li>
+                            <li>Adjust opacity for transparent gradient effects.</li>
+                            <li>Try different directions for varied looks.</li>
+                            <li>Import existing CSS gradients to modify them.</li>
+                            <li>Use keyboard shortcut <strong>Ctrl+B</strong> to toggle sidebar.</li>
+                        </ul>
+                        
+                        <div style="margin-top: 12px; padding: 8px; background: #f8f9fa; border-radius: 6px; border: 1px solid #dee2e6;">
+                            <p style="margin: 0 0 8px 0; font-weight: 500; color: #2c3e50;">Example workflow:</p>
+                            <p style="margin: 0;">1. Select a gradient direction<br>
+                            2. Add and adjust color stops<br>
+                            3. Fine-tune colors and opacity<br>
+                            4. Add a background image (optional)<br>
+                            5. Copy CSS code or download image</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
         
         <div class="main-preview">
@@ -762,7 +798,7 @@
                 <h4 style="margin: 0 0 10px 0; color: #2c3e50;">CSS Code:</h4>
                 <div style="display: flex; align-items: center; gap: 8px; justify-content: center; max-width: 600px; width: 100%; margin: 0 auto;">
                     <div style="background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 6px; padding: 10px 12px; flex: 1; overflow-x: auto; min-width: 0; max-width: 550px;">
-                        <code id="gradientCode" style="font-size: 12px; color: #2c3e50; font-family: 'Courier New', monospace; white-space: nowrap; display: block;">linear-gradient(to right, rgba(4, 3, 73, 1) 28%, rgba(4, 3, 73, 0.6) 65%, rgba(0, 0, 0, 0.4))</code>
+                        <code id="gradientCode" style="font-size: 12px; color: #2c3e50; font-family: 'Courier New', monospace; white-space: nowrap; display: block;">linear-gradient(to right, rgba(4, 3, 73, 1) 0%, rgba(0, 0, 0, 0.4) 100%)</code>
                     </div>
                     <button onclick="copyGradientCode()" id="copyBtn" title="Copy CSS" style="background: #3498db; color: white; border: none; padding: 8px 10px; border-radius: 4px; font-size: 12px; cursor: pointer; transition: background 0.2s ease; flex-shrink: 0; min-width: 40px; height: 36px; width: 23px;" onmouseover="this.style.background='#2980b9'" onmouseout="this.style.background='#3498db'">📋</button>
                 </div>
@@ -804,11 +840,10 @@
 
     <script>
         // Default gradient stops with unique IDs
-        let nextStopId = 4;
+        let nextStopId = 3;
         const gradientStops = [
-            { id: 1, color: { r: 4, g: 3, b: 73, a: 1 }, position: 28 },
-            { id: 2, color: { r: 4, g: 3, b: 73, a: 0.6 }, position: 65 },
-            { id: 3, color: { r: 0, g: 0, b: 0, a: 0.4 }, position: 100 }
+            { id: 1, color: { r: 4, g: 3, b: 73, a: 1 }, position: 0 },
+            { id: 2, color: { r: 0, g: 0, b: 0, a: 0.4 }, position: 100 }
         ];
         
         // Preview size functionality
